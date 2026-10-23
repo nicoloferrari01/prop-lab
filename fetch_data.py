@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 UA = {"User-Agent": "Mozilla/5.0 (prop-lab personal project)"}
 ESPN = "https://site.api.espn.com/apis/site/v2/sports/basketball/{league}"
 PARQUET = "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/espn_{league}_player_boxscores/player_box_{season}.parquet"
-FIELDS = ["date","gid","st","opp","ha","w","ts","os","min","pts","reb","ast","fg3","fg3a","stl","blk","tov","fgm","fga","sp"]
+FIELDS = ["date","gid","st","opp","ha","w","ts","os","min","pts","reb","ast","fg3","fg3a","stl","blk","tov","fgm","fga","sp","ns"]
 ALLSTAR_ABBR = {"COOP", "SPO", "STARS", "STRIPES", "WORLD"}
 NBA_TEAMS = {"ATL","BKN","BOS","CHA","CHI","CLE","DAL","DEN","DET","GS","HOU","IND","LAC","LAL","MEM","MIA","MIL","MIN","NO","NY","OKC","ORL","PHI","PHX","POR","SA","SAC","TOR","UTAH","WSH"}
 WNBA_TEAMS = {"ATL","CHI","CON","DAL","GS","IND","LA","LV","MIN","NY","PHX","POR","SEA","TOR","WSH"}
@@ -126,7 +126,7 @@ def load_sdv(league, season, teams=None):
         team, opp = team_of(x.team_abbreviation, alias), team_of(x.opponent_team_abbreviation, alias)
         if not sp and teams and (team not in teams or opp not in teams): sp = abbr_label(team, opp)
         if sp: st = 9
-        rows.append(dict(gid=ident(x.game_id), date=str(x.game_date)[:10], st=st, sp=sp,
+        rows.append(dict(gid=ident(x.game_id), date=str(x.game_date)[:10], st=st, sp=sp, ns=0,
             pid=ident(x.athlete_id), name=str(x.athlete_display_name), pos=str(blank(x.athlete_position_abbreviation)),
             team=team, opp=opp, ha=str(x.home_away),
             w=bool(x.team_winner), ts=int(num(x.team_score)), os=int(num(x.opponent_team_score)),
@@ -141,6 +141,7 @@ def espn_game(league, gid, date, st, teams=None, sp=""):
     elif st == 5: st = 3
     j = requests.get(ESPN.format(league=league) + f"/summary?event={gid}", headers=UA, timeout=30).json()
     comp = j["header"]["competitions"][0]
+    neutral = 1 if comp.get("neutralSite") else 0
     byid = {c["team"]["id"]: c for c in comp["competitors"]}
     rows = []
     alias = teams is not None
@@ -157,7 +158,7 @@ def espn_game(league, gid, date, st, teams=None, sp=""):
                 except (KeyError, TypeError, ValueError): return 0.0
             fg = str(v.get("fieldGoalsMade-fieldGoalsAttempted") or "0-0").split("-")
             f3 = str(v.get("threePointFieldGoalsMade-threePointFieldGoalsAttempted") or "0-0").split("-")
-            rows.append(dict(gid=str(gid), date=date, st=st, sp=sp or "", pid=str(a["athlete"]["id"]), name=a["athlete"]["displayName"],
+            rows.append(dict(gid=str(gid), date=date, st=st, sp=sp or "", ns=neutral, pid=str(a["athlete"]["id"]), name=a["athlete"]["displayName"],
                 pos=(a["athlete"].get("position") or {}).get("abbreviation") or "", team=team,
                 opp=opp_abbr, ha=me["homeAway"], w=bool(me.get("winner")),
                 ts=int(float(me["score"])), os=int(float(opp["score"])), min=minutes_of(v.get("minutes")),
@@ -220,6 +221,22 @@ def fill_espn(rows, league, season_year, start, end, teams=None, stop_empty=None
         day += dt.timedelta(days=1)
     return added
 
+def mark_neutral(rows, league):
+    """ESPN still assigns homeAway at a neutral site. ns keeps those games out of Home/Away."""
+    if not rows: return
+    dates = [dt.date.fromisoformat(r["date"]) for r in rows]
+    start, end = min(dates), max(dates)
+    neutral, y, m = set(), start.year, start.month
+    while (y, m) <= (end.year, end.month):
+        sb = requests.get(ESPN.format(league=league) + f"/scoreboard?dates={y}{m:02d}&limit=500", headers=UA, timeout=30).json()
+        for e in sb.get("events") or []:
+            c = (e.get("competitions") or [{}])[0]
+            if c.get("neutralSite"): neutral.add(str(e["id"]))
+        m += 1
+        if m > 12: m, y = 1, y + 1
+    for r in rows:
+        if str(r["gid"]) in neutral: r["ns"] = 1
+
 def pack(rows, season, source, sdv_last, added, label=None):
     for r in rows:
         for key in ("pts","reb","ast","fg3","fg3a","stl","blk","tov","fgm","fga","min"):
@@ -260,6 +277,7 @@ def fetch_one(league, season, path, global_name, source, teams=None, label=None,
     sdv_last = start.isoformat() if rows else ""
     today = dt.date.today()
     added = fill_espn(rows, league, season, start, end or today, teams, stop_empty) if start <= (end or today) else []
+    mark_neutral(rows, league)
     out = pack(rows, season, source, sdv_last, added, label)
     write_bundle(out, path, global_name)
     who = "giocatrici" if league == "wnba" else "giocatori"

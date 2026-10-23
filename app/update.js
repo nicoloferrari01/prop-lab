@@ -66,6 +66,10 @@ window.Update = (() => {
   function parseSummary(j, ev, F, nba) {
     const spec = specialLabel(ev, nba);
     const comp = j.header.competitions[0], date = etDate(ev.date);
+    if (comp.neutralSite) {
+      window.NEUTRAL_GAMES = window.NEUTRAL_GAMES || {};
+      window.NEUTRAL_GAMES[String(ev.id)] = 1;
+    }
     const st = spec ? 9 : (ev.season.type === 5 ? 3 : ev.season.type), rows = [];
     for (const tb of (j.boxscore && j.boxscore.players) || []) {
       const me = comp.competitors.find(c => c.team.id === tb.team.id), opp = comp.competitors.find(c => c !== me);
@@ -132,6 +136,10 @@ window.Update = (() => {
     }
     function apply(upd, kind, tone, extra) {
       if (my !== token) return;
+      if (upd && Array.isArray(upd.neutral)) {
+        window.NEUTRAL_GAMES = window.NEUTRAL_GAMES || {};
+        upd.neutral.forEach(id => { window.NEUTRAL_GAMES[String(id)] = 1; });
+      }
       shown = Object.assign({ kind, tone }, extra);
       if (upd && upd.games) window.App.setData(merge(upd, window.App.data()));
       window.App.setStatus(statusMessage(), tone);

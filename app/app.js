@@ -166,9 +166,30 @@ function mergeChrono(core, extra) {
   out.sort((x, y) => x[ix.date] < y[ix.date] ? -1 : x[ix.date] > y[ix.date] ? 1 : String(x[ix.gid]).localeCompare(String(y[ix.gid])));
   return out;
 }
+function isNeutral(g) {
+  if (!g) return false;
+  if (isSpecial(g)) return true;
+  if (ix.ns != null && g.length > ix.ns && g[ix.ns]) return true;
+  const map = window.NEUTRAL_GAMES;
+  return !!(map && map[String(g[ix.gid])]);
+}
+function inVenue(g, venue) {
+  if (!venue || venue === "all") return true;
+  if (venue === "neutral") return isNeutral(g);
+  if (isNeutral(g)) return false;
+  return g[ix.ha] === venue;
+}
+function oppBits(g) {
+  if (isSpecial(g)) return { text: spName(g), html: esc(spName(g)) };
+  const neutral = isNeutral(g);
+  const sym = !neutral && g[ix.ha] === "away" ? "@" : "vs";
+  const text = `${sym} ${g[ix.opp]}${neutral ? " N" : ""}`;
+  const html = `${sym} ${esc(g[ix.opp])}${neutral ? ` <small class="neu" title="${esc(tr("neutral"))}">N</small>` : ""}`;
+  return { text, html };
+}
 function visibleSpecials() {
   if (S.phase !== "all" || S.opp !== "all") return [];
-  return S.p.g.filter(g => isSpecial(g) && (S.venue === "all" || g[ix.ha] === S.venue));
+  return S.p.g.filter(g => isSpecial(g) && inVenue(g, S.venue));
 }
 function defaultLine() { const v = counted(S.p.g).map(statFn()); S.line = v.length ? Math.floor(median(v)) + 0.5 : 0.5; }
 
@@ -223,7 +244,7 @@ function syncVenueSeg() {
 }
 
 function filtered() {
-  return counted(S.p.g).filter(g => (S.venue==="all"||g[ix.ha]===S.venue) && (S.phase==="all"||String(g[ix.st])===S.phase) && (S.opp==="all"||g[ix.opp]===S.opp));
+  return counted(S.p.g).filter(g => inVenue(g, S.venue) && (S.phase==="all"||String(g[ix.st])===S.phase) && (S.opp==="all"||g[ix.opp]===S.opp));
 }
 function inCurrentSeason(g) {
   const d = g[ix.date];
@@ -272,17 +293,20 @@ function render() {
   const pnext = $("pnext");
   pnext.hidden = !ng0;
   if (ng0) {
-    const where = ng0.home.abbr === p.team ? "vs " + ng0.away.abbr : "@ " + ng0.home.abbr;
+    const oppAbbr = ng0.home.abbr === p.team ? ng0.away.abbr : ng0.home.abbr;
+    const sym = ng0.neutral || ng0.home.abbr === p.team ? "vs" : "@";
+    const where = `${sym} ${oppAbbr}${ng0.neutral ? " N" : ""}`;
     const when = fmtWhen(ng0.date);
     pnext.dataset.game = ng0.id;
-    pnext.innerHTML = `${esc(tr("next_prefix"))} ${esc(where)}, ${esc(when)}<span class="chev" aria-hidden="true">›</span>`;
+    const badge = ng0.neutral ? ` <small class="neu" title="${esc(tr("neutral"))}">N</small>` : "";
+    pnext.innerHTML = `${esc(tr("next_prefix"))} ${esc(sym + " " + oppAbbr)}${badge}, ${esc(when)}<span class="chev" aria-hidden="true">›</span>`;
     pnext.setAttribute("aria-label", tr("next_aria", { where, when }));
   } else {
     pnext.innerHTML = "";
     delete pnext.dataset.game;
     pnext.removeAttribute("aria-label");
   }
-  const venueGames = all.filter(g => S.venue === "all" || g[ix.ha] === S.venue);
+  const venueGames = all.filter(g => inVenue(g, S.venue));
   const av = k => venueGames.length ? (venueGames.reduce((s,g)=>s+g[ix[k]],0)/venueGames.length).toFixed(1) : "–";
   $("avgs").innerHTML = [["min","MIN"],["pts","PTS"],["reb","REB"],["ast","AST"],["fg3","3PM"]].map(([k,l])=>`<div class="avg"><b>${av(k)}</b><span>${l}</span></div>`).join("");
 
@@ -295,7 +319,7 @@ function render() {
   $("opp").innerHTML = `<option value="all">${esc(tr("team_all"))}</option>` + opps.map(o=>`<option value="${o}" ${S.opp===o?"selected":""}>${o} (${all.filter(g=>g[ix.opp]===o).length})</option>`).join("");
 
   // hit rate: calcolati su partite filtrate per casa/trasferta e fase; H2H sull'avversaria scelta
-  const base = all.filter(g => (S.venue==="all"||g[ix.ha]===S.venue) && (S.phase==="all"||String(g[ix.st])===S.phase));
+  const base = all.filter(g => inVenue(g, S.venue) && (S.phase==="all"||String(g[ix.st])===S.phase));
   const last = n => base.slice(-n);
   const ng = nextGame(p.team), ngOpp = ng ? (ng.home.abbr === p.team ? ng.away.abbr : ng.home.abbr) : null;
   const h2hOpp = S.opp !== "all" ? S.opp : (S.h2h || ngOpp || (all.length ? all[all.length-1][ix.opp] : ""));
@@ -303,7 +327,7 @@ function render() {
   $("hits").innerHTML = [
     hitCard(tr("last5"), last(5)), hitCard(tr("last10"), last(10)), hitCard(tr("last20"), last(20)),
     hitCard(tr("season"), base.filter(inCurrentSeason)), hitCard(h2hLbl, base.filter(g=>g[ix.opp]===h2hOpp)),
-    hitCard(tr("venue_home"), base.filter(g=>g[ix.ha]==="home")), hitCard(tr("venue_away"), base.filter(g=>g[ix.ha]==="away")),
+    hitCard(tr("venue_home"), base.filter(g => inVenue(g, "home"))), hitCard(tr("venue_away"), base.filter(g => inVenue(g, "away"))),
     ...(po ? [hitCard(tr("playoff"), base.filter(g => g[ix.st] === 3 || g[ix.st] === 5))] : [])
   ].join("");
 
@@ -339,7 +363,7 @@ function drawChart(games, vals) {
     if (w > 14) s += `<text x="${x+w/2}" y="${y(0)-h-6}" style="fill:var(--text)" font-size="${w>30?13:10}" font-weight="700" text-anchor="middle">${Number.isInteger(v)?v:v.toFixed(1)}</text>`;
     const nearSpec = games.some((o, j) => j !== i && isSpecial(o) && Math.abs(j - i) <= 1);
     const showLbl = spec || (!nearSpec && (n <= 25 || i % Math.ceil(n/25) === 0 || i === n-1));
-    const xlab = spec ? (bw >= 48 ? spName(g) : spTag(g)) : `${g[ix.ha]==="away"?"@":"vs "}${g[ix.opp]}`;
+    const xlab = spec ? (bw >= 48 ? spName(g) : spTag(g)) : oppBits(g).text;
     if (showLbl) s += `<text x="${x+w/2}" y="${H-pb+18}" style="fill:${spec ? "var(--special)" : "var(--text)"}" font-size="11" font-weight="${spec ? 700 : 400}" text-anchor="middle">${esc(xlab)}</text><text x="${x+w/2}" y="${H-pb+33}" style="fill:var(--mut)" font-size="10" text-anchor="middle">${fmtD(g[ix.date])}</text>`;
     if (!spec && g[ix.st]===3 && showLbl) s += `<text x="${x+w/2}" y="${H-pb+47}" style="fill:var(--acc)" font-size="9" text-anchor="middle">PO</text>`;
     s += `<rect x="${pl+i*bw}" y="${pt}" width="${bw}" height="${H-pt-pb}" fill="transparent"/></g>`;
@@ -357,7 +381,7 @@ function drawChart(games, vals) {
     const wl = g[ix.w] ? tr("w_short") : tr("l_short");
     const head = isSpecial(g)
       ? `<b>${fmtD(g[ix.date])} ${esc(spName(g))}</b> · ${wl} ${g[ix.ts]}-${g[ix.os]}`
-      : `<b>${fmtD(g[ix.date])} ${g[ix.ha]==="away"?"@":"vs"} ${g[ix.opp]}</b> · ${wl} ${g[ix.ts]}-${g[ix.os]}${g[ix.st]===3 ? tr("tip_playoff") : ""}`;
+      : `<b>${fmtD(g[ix.date])} ${oppBits(g).html}</b> · ${wl} ${g[ix.ts]}-${g[ix.os]}${g[ix.st]===3 ? tr("tip_playoff") : ""}`;
     tip.innerHTML = `${head}<br>${esc(statName())}: <b>${vals[i]}</b><br>${tr("tip_stats", { min: g[ix.min], pts: g[ix.pts], reb: g[ix.reb], ast: g[ix.ast], fg3: g[ix.fg3], fg3a: g[ix.fg3a] })}${isSpecial(g) ? "<br>" + esc(tr("tip_special")) : ""}`; };
   el.querySelectorAll("g.b").forEach(gEl => {
     const show = ev => { fillTip(+gEl.dataset.i); placeTip(tip, ev.clientX, ev.clientY); };
@@ -413,7 +437,7 @@ function drawLog(games) {
     prev = name || prev;
     const v = f(g), spec = isSpecial(g);
     const tag = spec ? ` <small class="asg">${spTag(g)}</small>` : (g[ix.st]===3||g[ix.st]===5?" <small style='color:var(--acc)'>PO</small>":"");
-    const opp = spec ? esc(spName(g)) : `${g[ix.ha]==="away"?"@":"vs"} ${g[ix.opp]}`;
+    const opp = oppBits(g).html;
     body += `<tr class="${spec?"special":""}"><td>${fmtD(g[ix.date])}${tag}</td><td>${opp}</td><td>${g[ix.w]?tr("w_short"):tr("l_short")} ${g[ix.ts]}-${g[ix.os]}</td>
     <td>${g[ix.min]}</td><td>${g[ix.pts]}</td><td>${g[ix.reb]}</td><td>${g[ix.ast]}</td><td>${g[ix.fg3]}/${g[ix.fg3a]}</td><td>${g[ix.stl]}</td><td>${g[ix.blk]}</td><td>${g[ix.tov]}</td><td>${g[ix.fgm]}/${g[ix.fga]}</td>
     <td class="hl ${spec?"":v>S.line?"good":v<S.line?"bad":""}">${Number.isInteger(v)?v:v.toFixed(1)}</td></tr>`;
@@ -445,7 +469,7 @@ function computeRows() {
   const rows = [];
   for (const p of D.players) {
     if (M.team !== "all" && p.team !== M.team) continue;
-    const base = p.g.filter(g => g[ix.st] !== 9 && (M.venue==="all"||g[ix.ha]===M.venue) && (M.phase==="all"||String(g[ix.st])===M.phase));
+    const base = p.g.filter(g => g[ix.st] !== 9 && inVenue(g, M.venue) && (M.phase==="all"||String(g[ix.st])===M.phase));
     if (!base.length) continue;
     const season = base.filter(inCurrentSeason);
     const per = M.period === "all" ? season : base.slice(-(+M.period));
@@ -662,7 +686,7 @@ function muRows(team, opp, side) {
     const mins = l10.reduce((a, g) => a + g[ix.min], 0) / l10.length;
     if (mins < MU.minMin) continue;
     const vals = all.map(f), avg = vals.reduce((a, b) => a + b, 0) / vals.length, line = Math.floor(median(vals)) + 0.5;
-    const base = MU.venue === "side" ? all.filter(g => g[ix.ha] === side) : all;
+    const base = MU.venue === "side" ? all.filter(g => inVenue(g, side)) : all;
     const season = base.filter(inCurrentSeason);
     rows.push({ p, mins, avg, line, gp: all.length, h10: hr(base.slice(-10), f, line), hs: hr(season, f, line),
       hv: hr(base.filter(g => g[ix.opp] === opp), f, line), last10: base.slice(-10).map(f) });
@@ -700,12 +724,15 @@ function renderMatchup() {
   const sides = [[g.away, g.home, "away"], [g.home, g.away, "home"]];
   $("mu-links").innerHTML = `<span class="lbl">${esc(tr("open_board"))}</span>` + sides.map(([t, o], i) => `<button class="linkbtn" data-i="${i}">${t.abbr} vs ${o.abbr}</button>`).join("");
   $("mu-links").querySelectorAll("button").forEach(b => b.onclick = () => { const [t, o, side] = sides[+b.dataset.i];
-    const preset = { stat: MU.stat, team: t.abbr, opp: o.abbr, venue: MU.venue === "side" ? side : "all", phase: "all", period: "all", minMin: MU.minMin, minG: 1, lines: {}, fixed: null, sort: "h10", dir: -1 };
+    const role = g.neutral ? "neutral" : side;
+    const preset = { stat: MU.stat, team: t.abbr, opp: o.abbr, venue: MU.venue === "side" ? role : "all", phase: "all", period: "all", minMin: MU.minMin, minG: 1, lines: {}, fixed: null, sort: "h10", dir: -1 };
     navigate("markets", "push", () => { Object.assign(M, preset); fromGame = null; pinGame = null; }); });
   const hcell = h => h.pct === null ? `<td class="hr na">–</td>` : `<td class="hr ${pctCls(h.pct)}"><b>${h.pct}%</b><small>${h.o}/${h.n}</small></td>`;
   sides.forEach(([t, o, side], i) => {
-    const rows = muRows(t.abbr, o.abbr, side);
-    $("mu-t" + i).textContent = `${t.name} · ${mName()}${MU.venue === "side" ? " · " + tr(side === "home" ? "only_home" : "only_away") : ""}`;
+    const role = g.neutral ? "neutral" : side;
+    const rows = muRows(t.abbr, o.abbr, role);
+    const where = role === "neutral" ? tr("only_neutral") : tr(role === "home" ? "only_home" : "only_away");
+    $("mu-t" + i).textContent = `${t.name} · ${mName()}${MU.venue === "side" ? " · " + where : ""}`;
     $("mu-tab" + i).innerHTML = `<thead><tr><th>${esc(trf("tab_player"))}</th><th>MIN</th><th>${esc(tr("col_last10"))}</th><th>${esc(tr("col_avg"))}</th><th>${esc(tr("col_line"))}</th><th>L10</th><th>${esc(tr("col_season"))}</th><th>vs ${esc(o.abbr)}</th></tr></thead><tbody>` +
       (rows.length ? rows.map(r => `<tr data-id="${r.p.id}" data-line="${r.line}" data-opp="${o.abbr}" data-side="${side}"><td class="pl"><b>${esc(r.p.name)}</b>${injHTML(r.p)}<small>${esc(r.p.pos || "")}</small></td><td>${r.mins.toFixed(1)}</td><td>${spark(r.last10, r.line)}</td><td>${r.avg.toFixed(1)}</td><td><b>${r.line}</b></td>${hcell(r.h10)}${hcell(r.hs)}${hcell(r.hv)}</tr>`).join("")
         : `<tr><td colspan="8" class="na">${esc(trf("none"))}</td></tr>`) + "</tbody>";

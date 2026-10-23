@@ -16,6 +16,7 @@ window.Schedule = (() => {
       st: (e.season || {}).type, season: (e.season || {}).year, home: team(side("home")), away: team(side("away")),
       venue: c.venue ? [c.venue.fullName, (c.venue.address || {}).city].filter(Boolean).join(", ") : "",
       series: c.series && c.series.summary ? c.series.summary : "", note: ((c.notes || [])[0] || {}).headline || "",
+      neutral: !!c.neutralSite,
       tv: ((c.broadcasts || []).flatMap(b => b.names || [])).join(", ") };
   }
   let token = 0;

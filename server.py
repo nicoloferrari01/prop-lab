@@ -86,13 +86,13 @@ def parse(j, ev, league, sp=""):
             team = team_of(tb["team"].get("abbreviation"), league)
             allowed = NBA_TEAMS if league == "nba" else WNBA_TEAMS
             if not sp and (team not in allowed or opp_abbr not in allowed): continue
-            g = dict(date=date, gid=str(ev["id"]), st=st, opp=opp_abbr, ha=me["homeAway"], sp=sp or "",
+            g = dict(date=date, gid=str(ev["id"]), st=st, opp=opp_abbr, ha=me["homeAway"], sp=sp or "", ns=1 if comp.get("neutralSite") else 0,
                      w=bool(me.get("winner")), ts=int(float(me["score"])), os=int(float(opp["score"])), min=minutes_of(v.get("minutes")), pts=n("points"),
                      reb=n("rebounds"), ast=n("assists"), fg3=f3[0], fg3a=f3[1], stl=n("steals"), blk=n("blocks"),
                      tov=n("turnovers"), fgm=fg[0], fga=fg[1])
             rows.append(dict(pid=a["athlete"]["id"], name=a["athlete"]["displayName"], pos=a["athlete"].get("position", {}).get("abbreviation", ""),
                              team=team, g=[g[f] for f in FIELDS]))
-    return rows
+    return rows, (str(ev["id"]) if comp.get("neutralSite") else "")
 
 def allstar_event(event):
     comp = (event.get("competitions") or [{}])[0]
@@ -124,8 +124,12 @@ def update(league, since, season, have):
             if not label and e["season"].get("type") not in (2, 3, 5): continue
             events.append((e, label))
     with ThreadPoolExecutor(6) as ex:
-        rows = [r for rs in ex.map(lambda job: parse(get(f"{base}/summary?event={job[0]['id']}"), job[0], league, job[1]), events) for r in rs]
-    return dict(ts=int(time.time() * 1000), games=len(events), rows=rows)
+        parsed = list(ex.map(lambda job: parse(get(f"{base}/summary?event={job[0]['id']}"), job[0], league, job[1]), events))
+    rows, neutral = [], []
+    for rs, gid in parsed:
+        rows.extend(rs)
+        if gid: neutral.append(gid)
+    return dict(ts=int(time.time() * 1000), games=len(events), rows=rows, neutral=neutral)
 
 def norm(e):
     c = e["competitions"][0]
@@ -140,6 +144,7 @@ def norm(e):
                 st=e.get("season", {}).get("type"), season=e.get("season", {}).get("year"), home=team(side("home")), away=team(side("away")),
                 venue=", ".join(x for x in [v.get("fullName"), v.get("address", {}).get("city")] if x) if v else "",
                 series=(c.get("series") or {}).get("summary", ""), note=((c.get("notes") or [{}])[0]).get("headline", ""),
+                neutral=bool(c.get("neutralSite")),
                 tv=", ".join(n for b in c.get("broadcasts", []) for n in b.get("names", [])))
 
 def schedule(league):
