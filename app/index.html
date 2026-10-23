@@ -14,21 +14,35 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="top" id="top">
-  <div class="brand"><img class="logo" src="icon.svg" alt="" width="28" height="28"><span class="dot pending" id="status-dot" data-i18n="checking" data-i18n-attr="title" title="Controllo nuove partite…"></span><button type="button" class="brand-btn" id="league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span id="league-label">NBA</span> <b>Prop Lab</b></button><button type="button" class="help" id="help" data-i18n="aria_help" data-i18n-attr="aria-label" aria-label="Guida" aria-haspopup="dialog" aria-controls="guide">i</button></div>
-  <nav class="tabs" id="tabs">
-    <button data-v="player"><span class="tab-l" data-i18n="tab_player_f">Giocatrice</span><span class="tab-s" data-i18n="tab_player_s">Gioc.</span></button>
-    <button data-v="markets"><span class="tab-l" data-i18n="tab_board">Listone</span><span class="tab-s" data-i18n="tab_board_s">Listone</span></button>
-    <button data-v="games" class="on"><span class="tab-l" data-i18n="tab_games">Partite</span><span class="tab-s" data-i18n="tab_games_s">Part.</span></button>
-  </nav>
-  <button type="button" class="search-toggle" id="search-toggle" data-i18n="aria_search" data-i18n-attr="aria-label" aria-label="Cerca" aria-expanded="false">
-    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.4 10.4L13.5 13.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-  </button>
-  <div class="search">
-    <input id="q" type="search" data-i18n="search_ph" data-i18n-attr="placeholder" placeholder="Cerca giocatore o squadra…" autocomplete="off">
-    <ul id="results" class="results"></ul>
+<div class="top-slot" id="top-slot">
+  <div class="top-fade" id="top-fade">
+    <header class="top" id="top">
+      <div class="brand"><img class="logo" src="icon.svg" alt="" width="28" height="28"><span class="dot pending status-dot" id="status-dot" data-i18n="checking" data-i18n-attr="title" title="Controllo nuove partite…"></span><button type="button" class="brand-btn league-btn" id="league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span class="league-label" id="league-label">NBA</span> <b>Prop Lab</b></button><button type="button" class="help" id="help" data-i18n="aria_help" data-i18n-attr="aria-label" aria-label="Guida" aria-haspopup="dialog" aria-controls="guide">i</button></div>
+      <nav class="tabs" id="tabs">
+        <button data-v="player"><span class="tab-l" data-i18n="tab_player_f">Giocatrice</span><span class="tab-s" data-i18n="tab_player_s">Gioc.</span></button>
+        <button data-v="markets"><span class="tab-l" data-i18n="tab_board">Listone</span><span class="tab-s" data-i18n="tab_board_s">Listone</span></button>
+        <button data-v="games" class="on"><span class="tab-l" data-i18n="tab_games">Partite</span><span class="tab-s" data-i18n="tab_games_s">Part.</span></button>
+      </nav>
+      <div class="search" id="search">
+        <input id="q" type="search" data-i18n="search_ph" data-i18n-attr="placeholder" placeholder="Cerca giocatore o squadra…" autocomplete="off">
+        <ul id="results" class="results"></ul>
+      </div>
+    </header>
   </div>
-</header>
+</div>
+<div class="top-sm-fade" id="top-sm-fade" aria-hidden="true" inert>
+  <header class="top top-sm" id="top-sm">
+    <div class="brand"><img class="logo" src="icon.svg" alt="" width="22" height="22"><span class="dot pending status-dot" data-i18n="checking" data-i18n-attr="title" title="Controllo nuove partite…"></span><button type="button" class="brand-btn league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span class="league-label">NBA</span> <b>Prop Lab</b></button><button type="button" class="help" data-i18n="aria_help" data-i18n-attr="aria-label" aria-label="Guida" aria-haspopup="dialog" aria-controls="guide">i</button></div>
+    <nav class="tabs">
+      <button data-v="player"><span class="tab-l" data-i18n="tab_player_f">Giocatrice</span><span class="tab-s" data-i18n="tab_player_s">Gioc.</span></button>
+      <button data-v="markets"><span class="tab-l" data-i18n="tab_board">Listone</span><span class="tab-s" data-i18n="tab_board_s">Listone</span></button>
+      <button data-v="games" class="on"><span class="tab-l" data-i18n="tab_games">Partite</span><span class="tab-s" data-i18n="tab_games_s">Part.</span></button>
+    </nav>
+    <button type="button" class="search-toggle" id="search-toggle" data-i18n="aria_search" data-i18n-attr="aria-label" aria-label="Cerca" aria-expanded="false">
+      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.4 10.4L13.5 13.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </header>
+</div>
 
 <main id="view-player" hidden>
   <section class="player" id="player">

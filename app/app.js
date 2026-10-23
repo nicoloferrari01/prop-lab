@@ -826,7 +826,7 @@ function paint(opts) {
   hideInjPop();
   ["player","markets","games","matchup"].forEach(k => $("view-" + k).hidden = view !== k);
   const tab = view === "matchup" ? "games" : view;
-  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.v === tab));
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.v === tab));
   ({ player: render, markets: renderMarkets, games: renderGames, matchup: renderMatchup })[view]();
   if (view !== "games") pinShown = null;
   if (scroll === "keep") { if (view === "games" && pinGame) markGame(pinGame); return; }
@@ -903,7 +903,7 @@ function bootHistory() {
     paint({ scroll: 0 });
   }
 }
-document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
   const v = b.dataset.v;
   if (v === view) return;
   const wasMatchup = view === "matchup";
@@ -915,50 +915,91 @@ document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
   });
 });
 document.querySelectorAll("details.filters").forEach(d => d.addEventListener("toggle", () => d.querySelectorAll(".chips").forEach(mountStrip)));
-const topEl = $("top"), searchToggle = $("search-toggle");
-searchToggle.addEventListener("click", () => {
-  const open = topEl.classList.toggle("search-open");
-  searchToggle.setAttribute("aria-expanded", open ? "true" : "false");
-  if (open) q.focus();
+const topFade = $("top-fade"), searchToggle = $("search-toggle"), searchEl = $("search");
+let searchHome = searchEl ? { parent: searchEl.parentNode, next: searchEl.nextSibling } : null;
+function closeSearch() {
+  if (searchToggle) searchToggle.setAttribute("aria-expanded", "false");
+  if (!searchEl || !searchEl.classList.contains("is-floating") || !searchHome) return;
+  searchEl.classList.remove("is-floating");
+  searchHome.parent.insertBefore(searchEl, searchHome.next);
+  if (res) res.style.display = "none";
+}
+if (searchToggle) searchToggle.addEventListener("click", () => {
+  const open = searchToggle.getAttribute("aria-expanded") !== "true";
+  if (!open) { closeSearch(); return; }
+  searchHome = { parent: searchEl.parentNode, next: searchEl.nextSibling };
+  document.body.appendChild(searchEl);
+  searchEl.classList.add("is-floating");
+  const bar = $("top-sm");
+  if (bar) document.documentElement.style.setProperty("--search-top", Math.ceil(bar.getBoundingClientRect().bottom + 8) + "px");
+  searchToggle.setAttribute("aria-expanded", "true");
+  q.focus();
 });
 document.addEventListener("click", e => {
-  if (!topEl.classList.contains("slim") || e.target.closest(".search") || e.target.closest("#search-toggle")) return;
-  topEl.classList.remove("search-open"); searchToggle.setAttribute("aria-expanded", "false");
+  if (!document.documentElement.classList.contains("is-slim")) return;
+  if (e.target.closest(".search") || e.target.closest("#search-toggle")) return;
+  closeSearch();
 });
-let lastY = window.scrollY, acc = 0, scrollLock = 0;
-function occupied(el) {
-  const s = getComputedStyle(el);
-  return el.offsetHeight + parseFloat(s.marginTop) + parseFloat(s.marginBottom);
+let lastY = window.scrollY, slim = false, collapseY = 72, expandY = 16;
+let scrollScheduled = false, latestY = window.scrollY;
+let lastVVH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+function measureBar() {
+  const slot = $("top-slot");
+  const h = slot ? slot.offsetHeight : 120;
+  const line = Math.max(56, h - 28);
+  collapseY = line + 18;
+  expandY = Math.max(8, line - 18);
+}
+let slimRelease = 0, idleClear = 0, armGen = 0, seenGen = 0, wantSlim = false, slimRAF = 0;
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+function clearLayerHint() {
+  if (topFade) topFade.style.willChange = "";
+  const sm = $("top-sm-fade");
+  if (sm) sm.style.willChange = "";
+  armGen = 0;
+  seenGen = 0;
+}
+function arm(el) {
+  if (!el || reduceMotion.matches) return;
+  if (el.style.willChange === "transform, opacity") return;
+  el.style.willChange = "transform, opacity";
+  const gen = ++armGen;
+  requestAnimationFrame(() => { if (gen === armGen) seenGen = gen; });
+  clearTimeout(idleClear);
+  idleClear = setTimeout(() => { if (!slim) clearLayerHint(); }, 700);
+}
+function layersReady() {
+  if (reduceMotion.matches) return true;
+  return !!(topFade && topFade.style.willChange === "transform, opacity" && seenGen === armGen && armGen !== 0);
+}
+function disarmSoon() {
+  clearTimeout(slimRelease);
+  clearTimeout(idleClear);
+  slimRelease = setTimeout(clearLayerHint, 520);
 }
 function setSlim(on) {
-  if (topEl.classList.contains("slim") === on) return;
-  const y = window.scrollY;
-  scrollLock = performance.now() + 220;
-  acc = 0;
-  if (on) {
-    const flowH = occupied(topEl);
-    topEl.classList.add("slim");
-    const bar = Math.ceil(topEl.getBoundingClientRect().bottom);
-    const pad = bar + 12;
-    const next = Math.max(0, y + bar - flowH);
-    if (next < 8) {
-      topEl.classList.remove("slim");
-      lastY = y;
-      scrollLock = 0;
-      return;
-    }
-    document.body.style.paddingTop = pad + "px";
-    lastY = next;
-  } else {
-    const pad = parseFloat(document.body.style.paddingTop) || 0;
-    topEl.classList.remove("slim", "search-open");
-    searchToggle.setAttribute("aria-expanded", "false");
-    document.body.style.paddingTop = "";
-    const flowH = occupied(topEl);
-    lastY = Math.max(0, y - (flowH - pad));
+  if (wantSlim === on && slim === on) return;
+  wantSlim = on;
+  if (!layersReady()) {
+    arm(topFade);
+    arm($("top-sm-fade"));
+    if (!slimRAF) slimRAF = requestAnimationFrame(() => { slimRAF = 0; setSlim(wantSlim); });
+    return;
   }
-  window.scrollTo(0, lastY);
+  if (slim === on) return;
+  slim = on;
+  const sm = $("top-sm-fade");
+  document.documentElement.classList.toggle("is-slim", on);
+  if (sm) {
+    sm.setAttribute("aria-hidden", on ? "false" : "true");
+    sm.toggleAttribute("inert", !on);
+  }
+  if (topFade) topFade.toggleAttribute("inert", on);
+  if (!on) closeSearch();
+  disarmSoon();
 }
+measureBar();
+if (window.ResizeObserver && $("top-slot")) new ResizeObserver(measureBar).observe($("top-slot"));
 document.addEventListener("pointerdown", e => {
   if (e.target.closest && e.target.closest("#chart g.b")) return;
   const tip = $("tip"); if (tip) tip.style.display = "none";
@@ -970,22 +1011,38 @@ document.addEventListener("click", e => {
   if (b.classList.contains("inj-line") || b.closest("#pname")) toggleInjLine();
   else showInjPop(b);
 }, true);
-window.addEventListener("scroll", () => {
-  hideInjPop();
-  const tip = $("tip"); if (tip) tip.style.display = "none";
-  const y = window.scrollY;
-  if (performance.now() < scrollLock) {
-    lastY = y;
-    if (y < 8) setSlim(false);
-    return;
+function stepScroll() {
+  scrollScheduled = false;
+  const y = latestY;
+  const dy = y - lastY;
+  const vv = window.visualViewport;
+  let toolbar = false;
+  if (vv) {
+    const h = vv.height;
+    toolbar = Math.abs(h - lastVVH) > 1 && Math.abs(dy) < 48;
+    lastVVH = h;
   }
-  const dy = y - lastY; lastY = y;
-  if (y < 8) { setSlim(false); return; }
-  if (document.activeElement === q) return;
-  if ((dy > 0 && acc < 0) || (dy < 0 && acc > 0)) acc = 0;
-  acc += dy;
-  if (acc > 28) setSlim(true);
-  else if (acc < -28) setSlim(false);
+  if (document.activeElement === q) { lastY = y; return; }
+  const tip = $("tip");
+  if (tip && tip.style.display === "block") tip.style.display = "none";
+  const pop = $("inj-pop");
+  if (pop && !pop.hidden) hideInjPop();
+  if (y <= expandY) setSlim(false);
+  else if (!toolbar && dy > 0 && y >= collapseY) setSlim(true);
+  lastY = y;
+}
+window.addEventListener("scroll", () => {
+  latestY = window.scrollY;
+  if (!reduceMotion.matches && latestY > 24 && latestY < collapseY) {
+    arm(topFade);
+    arm($("top-sm-fade"));
+  }
+  if (scrollScheduled) return;
+  scrollScheduled = true;
+  requestAnimationFrame(stepScroll);
+}, { passive: true });
+window.addEventListener("scrollend", () => {
+  if (window.scrollY <= expandY) setSlim(false);
 }, { passive: true });
 window.addEventListener("popstate", () => { if (history.state && history.state.view) applyState(history.state); });
 
@@ -997,11 +1054,11 @@ function foot() {
 }
 function setStatus(text, tone) {
   const el = $("status"); el.textContent = text; el.className = "status" + (tone ? " " + tone : "");
-  const dot = $("status-dot"); if (dot) { dot.className = "dot " + (tone || "pending"); dot.title = text; }
+  document.querySelectorAll(".status-dot").forEach(dot => { dot.className = "dot status-dot " + (tone || "pending"); dot.title = text; });
 }
 function applyChrome() {
-  const lab = $("league-label"); if (lab) lab.textContent = L.label;
-  const tab = document.querySelector('#tabs button[data-v="player"] .tab-l'); if (tab) tab.textContent = trf("tab_player");
+  document.querySelectorAll(".league-label").forEach(lab => { lab.textContent = L.label; });
+  document.querySelectorAll('.tabs button[data-v="player"] .tab-l').forEach(tab => { tab.textContent = trf("tab_player"); });
   if (q) q.placeholder = trf("search_ph");
   document.querySelectorAll(".league-opt").forEach(b => b.classList.toggle("on", b.dataset.league === L.id));
   document.querySelectorAll("[data-i18n-fem]").forEach(el => { el.textContent = trf(el.getAttribute("data-i18n-fem")); });
@@ -1083,8 +1140,7 @@ function initGuide() {
     else guideAt(gi + 1);
   });
   document.querySelectorAll("#guide-dots .guide-dot").forEach((d, i) => d.addEventListener("click", () => guideAt(i)));
-  const help = $("help");
-  if (help) help.addEventListener("click", e => { e.stopPropagation(); guideOpen(); });
+  document.querySelectorAll(".help").forEach(help => help.addEventListener("click", e => { e.stopPropagation(); guideOpen(); }));
   view.addEventListener("pointerdown", e => {
     if (e.button !== 0) return;
     gDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, lock: false };

@@ -112,14 +112,14 @@ async function choose(id) {
     return;
   }
   remember(id);
-  const pop = document.getElementById("league-pop"), btn = document.getElementById("league-btn");
+  const pop = document.getElementById("league-pop");
   if (pop) pop.hidden = true;
-  if (btn) btn.setAttribute("aria-expanded", "false");
+  document.querySelectorAll(".league-btn").forEach(btn => btn.setAttribute("aria-expanded", "false"));
   if (current === id) return;
   current = id;
   const my = ++req;
   const cfg = window.LEAGUES[id];
-  document.getElementById("league-label").textContent = cfg.label;
+  document.querySelectorAll(".league-label").forEach(el => { el.textContent = cfg.label; });
   if (id !== "wnba") App.setStatus(I18n.t("loading_league", { league: cfg.label }), "pending");
   try {
     const data = await loadLeague(id);
@@ -136,21 +136,24 @@ async function choose(id) {
 remember(initialLeague());
 choose(initialLeague());
 
-const leagueBtn = document.getElementById("league-btn"), leaguePop = document.getElementById("league-pop");
-leagueBtn.addEventListener("click", e => {
+const leaguePop = document.getElementById("league-pop");
+function setLeagueExpanded(open) {
+  leaguePop.hidden = !open;
+  document.querySelectorAll(".league-btn").forEach(btn => btn.setAttribute("aria-expanded", open ? "true" : "false"));
+}
+document.querySelectorAll(".league-btn").forEach(leagueBtn => leagueBtn.addEventListener("click", e => {
   e.stopPropagation();
   const open = leaguePop.hidden;
-  leaguePop.hidden = !open;
-  leagueBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  setLeagueExpanded(open);
   if (open) document.querySelectorAll(".league-opt").forEach(b => b.classList.toggle("on", b.dataset.league === (App.league ? App.league().id : current)));
-});
+}));
 leaguePop.addEventListener("click", e => {
-  if (e.target === leaguePop) { leaguePop.hidden = true; leagueBtn.setAttribute("aria-expanded", "false"); return; }
+  if (e.target === leaguePop) { setLeagueExpanded(false); return; }
   const langBtn = e.target.closest("[data-lang]");
   if (langBtn) { I18n.set(langBtn.dataset.lang); return; }
   const b = e.target.closest(".league-opt");
   if (b) choose(b.dataset.league);
 });
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && !leaguePop.hidden) { leaguePop.hidden = true; leagueBtn.setAttribute("aria-expanded", "false"); }
+  if (e.key === "Escape" && !leaguePop.hidden) setLeagueExpanded(false);
 });
