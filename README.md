@@ -1,6 +1,6 @@
 # Prop Lab (prototipo)
 
-Sito live: https://nicoloferrari01.github.io/wnba-prop-lab/
+Sito live: https://nicoloferrari01.github.io/prop-lab/
 
 Pages source must be set to "GitHub Actions" (Settings → Pages → Source).
 
