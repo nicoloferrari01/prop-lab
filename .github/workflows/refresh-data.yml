@@ -1,0 +1,78 @@
+name: Refresh data
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+# contents: write commits refreshed logs. pages + id-token deploy from
+# this workflow: a push made with GITHUB_TOKEN does not trigger pages.yml.
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pandas pyarrow requests
+
+      - name: Fetch WNBA and NBA
+        run: python fetch_data.py
+
+      - name: Commit and push if app/data changed
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/data
+          if git diff --staged --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in app/data"
+          else
+            git commit -m "Refresh WNBA and NBA game logs ($(date -u +%Y-%m-%d))"
+            git push origin HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Pages
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/configure-pages@v6
+
+      - name: Stamp asset versions
+        if: steps.commit.outputs.changed == 'true'
+        run: python3 scripts/stamp-assets.py
+
+      - name: Upload artifact
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: app
+
+  deploy:
+    needs: refresh
+    if: needs.refresh.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

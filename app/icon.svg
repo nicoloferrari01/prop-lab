@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="WNBA Prop Lab">
+  <defs>
+    <linearGradient id="slabD" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a2a2a"/>
+      <stop offset="42%" stop-color="#141414"/>
+      <stop offset="100%" stop-color="#070707"/>
+    </linearGradient>
+    <linearGradient id="slabL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f3f3f3"/>
+    </linearGradient>
+    <clipPath id="slabClip">
+      <rect x="1" y="1" width="178" height="178" rx="46"/>
+    </clipPath>
+    <mask id="edge" maskUnits="userSpaceOnUse">
+      <rect width="180" height="180" fill="#000"/>
+      <rect x="2" y="2" width="176" height="176" rx="45" fill="#fff"/>
+      <rect x="13" y="13" width="154" height="154" rx="36" fill="#000"/>
+    </mask>
+    <filter id="bloom" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4.5"/>
+    </filter>
+    <mask id="ball">
+      <rect width="180" height="180" fill="#fff"/>
+      <g fill="none" stroke="#000" stroke-width="8" stroke-linecap="round">
+        <path d="M90 34 C72 62 72 118 90 146"/>
+        <path d="M36 94 C64 76 116 76 144 94"/>
+        <path d="M58 48 C74 72 72 116 52 138"/>
+        <path d="M122 48 C106 72 108 116 128 138"/>
+      </g>
+    </mask>
+  </defs>
+  <style>
+    .slab { fill: url(#slabD); }
+    .glyph { fill: #fff; }
+    .lip { stroke: rgba(255,255,255,.34); }
+    @media (prefers-color-scheme: light) {
+      .slab { fill: url(#slabL); }
+      .glyph { fill: #0a0a0a; }
+      .lip { stroke: rgba(0,0,0,.14); }
+    }
+  </style>
+  <g clip-path="url(#slabClip)">
+    <rect class="slab" width="180" height="180"/>
+    <g filter="url(#bloom)">
+      <g mask="url(#edge)">
+        <g opacity=".7">
+        <path fill="#ff4d6a" d="M90 90 L126.4 -81.2 A175 175 0 0 1 151.5 -73.8 Z"/>
+        <path fill="#ff9a3c" d="M90 90 L151.5 -73.8 A175 175 0 0 1 175.2 -62.8 Z"/>
+        <path fill="#ffe14a" d="M90 90 L175.2 -62.8 A175 175 0 0 1 197.1 -48.4 Z"/>
+        <path fill="#6eecc0" d="M90 90 L197.1 -48.4 A175 175 0 0 1 216.5 -30.9 Z"/>
+        <path fill="#3ec8ff" d="M90 90 L216.5 -30.9 A175 175 0 0 1 233.1 -10.7 Z"/>
+        <path fill="#4d7dff" d="M90 90 L233.1 -10.7 A175 175 0 0 1 246.5 11.7 Z"/>
+        <path fill="#b07dff" d="M90 90 L246.5 11.7 A175 175 0 0 1 256.4 35.9 Z"/>
+        <path fill="#b07dff" d="M90 90 L53.6 261.2 A175 175 0 0 1 28.5 253.8 Z"/>
+        <path fill="#4d7dff" d="M90 90 L28.5 253.8 A175 175 0 0 1 4.8 242.8 Z"/>
+        <path fill="#3ec8ff" d="M90 90 L4.8 242.8 A175 175 0 0 1 -17.1 228.4 Z"/>
+        <path fill="#6eecc0" d="M90 90 L-17.1 228.4 A175 175 0 0 1 -36.5 210.9 Z"/>
+        <path fill="#ffe14a" d="M90 90 L-36.5 210.9 A175 175 0 0 1 -53.1 190.7 Z"/>
+        <path fill="#ff9a3c" d="M90 90 L-53.1 190.7 A175 175 0 0 1 -66.5 168.3 Z"/>
+        <path fill="#ff4d6a" d="M90 90 L-66.5 168.3 A175 175 0 0 1 -76.4 144.1 Z"/>
+        </g>
+      </g>
+    </g>
+    <rect class="lip" x="7" y="7" width="166" height="166" rx="41" fill="none" stroke-width="1.4"/>
+    <circle class="glyph" cx="90" cy="92" r="54" mask="url(#ball)"/>
+  </g>
+</svg>

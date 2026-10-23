@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="it" data-v="">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f2f2f2">
+<meta name="apple-mobile-web-app-title" content="Prop Lab">
+<title>Prop Lab</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top" id="top">
+  <div class="brand"><img class="logo" src="icon.svg" alt="" width="28" height="28"><span class="dot pending" id="status-dot" title="Controllo nuove partite…"></span><button type="button" class="brand-btn" id="league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span id="league-label">NBA</span> <b>Prop Lab</b></button></div>
+  <nav class="tabs" id="tabs">
+    <button data-v="player"><span class="tab-l">Giocatrice</span><span class="tab-s">Gioc.</span></button>
+    <button data-v="markets"><span class="tab-l">Mercati</span><span class="tab-s">Merc.</span></button>
+    <button data-v="games" class="on"><span class="tab-l">Partite</span><span class="tab-s">Part.</span></button>
+  </nav>
+  <button type="button" class="search-toggle" id="search-toggle" aria-label="Cerca" aria-expanded="false">
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.4 10.4L13.5 13.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+  </button>
+  <div class="search">
+    <input id="q" type="search" placeholder="Cerca giocatore o squadra…" autocomplete="off">
+    <ul id="results" class="results"></ul>
+  </div>
+</header>
+
+<main id="view-player" hidden>
+  <section class="player" id="player">
+    <div class="pcol">
+      <div class="pinfo">
+        <img id="headshot" alt="">
+        <div class="pident">
+          <h1 id="pname"></h1>
+          <button type="button" class="inj-line" id="inj-line" hidden></button>
+          <div class="pmeta" id="pmeta"></div>
+        </div>
+      </div>
+      <button type="button" class="nextg" id="pnext" hidden></button>
+    </div>
+    <div class="avgs" id="avgs"></div>
+  </section>
+
+  <section class="controls">
+    <div class="chips" id="stats"></div>
+    <div class="primary">
+      <div class="line">
+        <span class="lbl">Linea</span>
+        <div class="step">
+          <button id="minus" type="button" aria-label="Diminuisci">−</button>
+          <input id="line" type="number" step="0.5">
+          <button id="plus" type="button" aria-label="Aumenta">+</button>
+        </div>
+        <button id="reset" class="ghost" type="button">Mediana</button>
+      </div>
+      <div class="chips" id="periods"></div>
+    </div>
+    <details class="filters" id="player-filters">
+      <summary>Filtri <span class="badge" id="pf-badge" hidden></span></summary>
+      <div class="filter-body">
+        <label class="sel"><span class="lbl">Avversaria</span><select id="opp"></select></label>
+        <div class="chips" id="phase"></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="seg" id="venue-seg" data-i="0" role="tablist" aria-label="Casa o trasferta">
+    <span class="seg-thumb" aria-hidden="true"></span>
+    <button type="button" role="tab" data-v="all" aria-selected="true">Tutte</button>
+    <button type="button" role="tab" data-v="home" aria-selected="false">Casa</button>
+    <button type="button" role="tab" data-v="away" aria-selected="false">Trasferta</button>
+  </div>
+  <section class="hits" id="hits"></section>
+
+  <section class="card">
+    <div class="cardhead"><h2 id="charttitle"></h2><div class="legend"><span class="sw over"></span>Over <span class="sw under"></span>Under <span class="sw push"></span>Push <span class="sw special"></span>Speciale</div></div>
+    <div id="chart" class="chart"></div>
+  </section>
+
+  <section class="card">
+    <div class="cardhead"><h2>Game log</h2></div>
+    <div class="tablewrap"><table id="log"></table></div>
+  </section>
+</main>
+
+<main id="view-markets" hidden>
+  <section class="controls">
+    <div class="chips" id="m-stats"></div>
+    <div class="primary">
+      <div class="line" id="m-fixedwrap"><span class="lbl">Linea fissa</span><div class="step"><button id="m-minus" type="button" aria-label="Diminuisci">−</button><input id="m-fixed" type="number" step="0.5"><button id="m-plus" type="button" aria-label="Aumenta">+</button></div></div>
+      <button id="m-resetlines" class="ghostbtn">Ripristina linee</button>
+      <div class="grow">
+        <span class="lbl">Base calcolo</span>
+        <div class="chips" id="m-period"></div>
+      </div>
+    </div>
+    <details class="filters" id="market-filters">
+      <summary>Filtri <span class="badge" id="mf-badge" hidden></span></summary>
+      <div class="filter-body">
+        <label class="sel"><span class="lbl">Squadra</span><select id="m-team"></select></label>
+        <label class="sel"><span class="lbl">Avversaria</span><select id="m-opp"></select></label>
+        <label class="sel"><span class="lbl">Min. minuti</span><input id="m-minmin" class="num" type="number" min="0" step="1"></label>
+        <label class="sel"><span class="lbl">Min. partite</span><input id="m-ming" class="num" type="number" min="1" step="1"></label>
+        <div class="chips" id="m-venue"></div>
+        <div class="chips" id="m-phase"></div>
+        <div class="chips" id="m-linemode"></div>
+      </div>
+    </details>
+  </section>
+  <section class="card">
+    <div class="cardhead"><h2 id="m-title"></h2><div class="legend">Clic su una riga per aprire la scheda · clic sulle intestazioni per ordinare</div></div>
+    <div class="tablewrap tall"><table id="m-table" class="mtable"></table></div>
+  </section>
+</main>
+<main id="view-games">
+  <section class="card">
+    <div class="cardhead"><h2>Prossime partite</h2><div class="legend" id="g-src"></div></div>
+    <div id="g-up" class="games"></div>
+  </section>
+  <section class="card">
+    <div class="cardhead"><h2>Risultati recenti</h2><div class="legend">Ultimi 7 giorni · orari Europe/Rome</div></div>
+    <div id="g-rec" class="games"></div>
+  </section>
+</main>
+
+<main id="view-matchup" hidden>
+  <section class="card mu-head" id="mu-head"></section>
+  <section class="controls">
+    <div class="chips" id="mu-stats"></div>
+    <details class="filters" id="mu-filters">
+      <summary>Filtri <span class="badge" id="uf-badge" hidden></span></summary>
+      <div class="filter-body">
+        <div class="filter-line"><span class="lbl">Casa/Trasferta</span><div class="chips" id="mu-venue"></div></div>
+        <div class="filter-line"><span class="lbl">Minuti medi ≥</span><div class="chips" id="mu-min"></div></div>
+      </div>
+    </details>
+    <div class="row" id="mu-links"></div>
+  </section>
+  <div class="mu-grid">
+    <section class="card"><div class="cardhead"><h2 id="mu-t0"></h2></div><div class="tablewrap tall"><table id="mu-tab0" class="mtable"></table></div></section>
+    <section class="card"><div class="cardhead"><h2 id="mu-t1"></h2></div><div class="tablewrap tall"><table id="mu-tab1" class="mtable"></table></div></section>
+  </div>
+</main>
+<footer id="foot">
+  <div class="status" id="status" role="status">Controllo nuove partite…</div>
+  <div class="fresh" id="fresh"></div>
+  <div class="foot-note" id="foot-note"></div>
+</footer>
+<div id="league-pop" class="league-pop" hidden>
+  <div class="league-sheet card" role="dialog" aria-modal="true" aria-labelledby="league-h">
+    <div class="league-h" id="league-h">Campionato</div>
+    <button type="button" class="league-opt" data-league="nba">NBA</button>
+    <button type="button" class="league-opt" data-league="wnba">WNBA</button>
+  </div>
+</div>
+<script src="data/gamelogs.js"></script>
+<script src="data/injuries.js"></script>
+<script src="app.js"></script>
+<script src="injuries.js"></script>
+<script src="update.js"></script>
+<script src="schedule.js"></script>
+<script src="league.js"></script>
+</body>
+</html>
