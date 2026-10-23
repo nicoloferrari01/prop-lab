@@ -17,6 +17,7 @@
   --shadow:var(--bevel), var(--depth);
   --track:rgba(255,255,255,.06);
   --special:#c4b5fd; --special-bg:rgba(196,181,253,.22);
+  --playoff:#f0c14e;
   --sat:env(safe-area-inset-top, 0px); --sar:env(safe-area-inset-right, 0px);
   --sab:env(safe-area-inset-bottom, 0px); --sal:env(safe-area-inset-left, 0px);
   --r-xl:30px; --r-lg:24px; --r-md:16px;
@@ -40,6 +41,7 @@
     --shadow:var(--bevel), var(--depth);
     --track:rgba(0,0,0,.045);
     --special:#5b46c6; --special-bg:rgba(91,70,198,.14);
+    --playoff:#8a6400;
   }
 }
 *{box-sizing:border-box}
@@ -190,10 +192,15 @@ h1{margin:0;font-size:28px;font-weight:700;letter-spacing:-.03em;line-height:1.1
 svg .bar.over{fill:var(--bar-over);stroke:none}
 svg .bar.under{fill:var(--bar-under);stroke:none}
 svg .bar.push{fill:var(--bar-push);stroke:none}
+svg .bar.playoff{stroke:var(--playoff);stroke-width:2px;vector-effect:non-scaling-stroke}
 svg .bar.special{fill:url(#sp-hatch);stroke:var(--special);stroke-width:2.5}
 .sw.special{width:12px;height:10px;border-radius:3px;background:repeating-linear-gradient(-45deg,var(--special) 0 1.5px,var(--special-bg) 1.5px 4.5px);box-shadow:inset 0 0 0 1px var(--special)}
+.mark-legend{font-size:11px;letter-spacing:.01em}
+.mark-legend .mk-pre{color:var(--special);font-weight:650}
+.mark-legend .mk-po{color:var(--playoff);font-weight:650}
 tr.special td{color:var(--mut)}
 tr.special .asg{color:var(--special);font-weight:700;letter-spacing:.04em;margin-left:4px}
+.po{color:var(--playoff);font-weight:700;letter-spacing:.04em;margin-left:4px}
 .neu{display:inline-block;margin-left:4px;padding:0 3px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.04em;line-height:1.4;color:var(--mut);border:1px solid var(--line);vertical-align:1px}
 h1 .inj{font-size:.55em;margin-left:.28em;vertical-align:.08em;line-height:1}
 .pl .inj,.results .inj{font-size:12px;margin-left:4px;vertical-align:-1px;line-height:1}
@@ -330,6 +337,7 @@ footer{color:var(--mut);font-size:11px;text-align:center;padding:22px 16px calc(
   --depth:0 14px 32px rgba(0,0,0,.50), 0 2px 6px rgba(0,0,0,.38);
   --shadow:var(--bevel), var(--depth);--track:rgba(255,255,255,.06);
   --special:#c4b5fd;--special-bg:rgba(196,181,253,.22);
+  --playoff:#f0c14e;
 }
 body.guide-on{overflow:hidden}
 .guide-box{width:min(100%,400px);margin:auto;display:flex;flex-direction:column;align-items:center;gap:16px}

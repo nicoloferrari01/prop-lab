@@ -142,6 +142,12 @@ function chips(el, opts, key, after) {
   mountStrip(el);
 }
 function isSpecial(g) { return g[ix.st] === 9; }
+function isPlayoff(g) { const st = g[ix.st]; return st === 3 || st === 5; }
+function inPhase(g, phase) {
+  if (!phase || phase === "all") return true;
+  if (phase === "3") return isPlayoff(g);
+  return String(g[ix.st]) === String(phase);
+}
 function counted(list) { return list.filter(g => !isSpecial(g)); }
 function spName(g) {
   const lab = ix.sp >= 0 && g[ix.sp] ? String(g[ix.sp]) : "";
@@ -244,7 +250,7 @@ function syncVenueSeg() {
 }
 
 function filtered() {
-  return counted(S.p.g).filter(g => inVenue(g, S.venue) && (S.phase==="all"||String(g[ix.st])===S.phase) && (S.opp==="all"||g[ix.opp]===S.opp));
+  return counted(S.p.g).filter(g => inVenue(g, S.venue) && inPhase(g, S.phase) && (S.opp==="all"||g[ix.opp]===S.opp));
 }
 function inCurrentSeason(g) {
   const d = g[ix.date];
@@ -275,7 +281,7 @@ function render() {
   if (S.line === null) defaultLine();
   $("headshot").src = `https://a.espncdn.com/i/headshots/${L.shot}/players/full/${p.id}.png`;
   $("headshot").onerror = function(){ this.style.visibility="hidden"; }; $("headshot").style.visibility="visible";
-  const po = all.filter(g => g[ix.st] === 3 || g[ix.st] === 5).length;
+  const po = all.filter(isPlayoff).length;
   const ng0 = nextGame(p.team);
   $("pname").textContent = p.name;
   const hurt = injuryOf(p);
@@ -319,7 +325,7 @@ function render() {
   $("opp").innerHTML = `<option value="all">${esc(tr("team_all"))}</option>` + opps.map(o=>`<option value="${o}" ${S.opp===o?"selected":""}>${o} (${all.filter(g=>g[ix.opp]===o).length})</option>`).join("");
 
   // hit rate: calcolati su partite filtrate per casa/trasferta e fase; H2H sull'avversaria scelta
-  const base = all.filter(g => inVenue(g, S.venue) && (S.phase==="all"||String(g[ix.st])===S.phase));
+  const base = all.filter(g => inVenue(g, S.venue) && inPhase(g, S.phase));
   const last = n => base.slice(-n);
   const ng = nextGame(p.team), ngOpp = ng ? (ng.home.abbr === p.team ? ng.away.abbr : ng.home.abbr) : null;
   const h2hOpp = S.opp !== "all" ? S.opp : (S.h2h || ngOpp || (all.length ? all[all.length-1][ix.opp] : ""));
@@ -328,7 +334,7 @@ function render() {
     hitCard(tr("last5"), last(5)), hitCard(tr("last10"), last(10)), hitCard(tr("last20"), last(20)),
     hitCard(tr("season"), base.filter(inCurrentSeason)), hitCard(h2hLbl, base.filter(g=>g[ix.opp]===h2hOpp)),
     hitCard(tr("venue_home"), base.filter(g => inVenue(g, "home"))), hitCard(tr("venue_away"), base.filter(g => inVenue(g, "away"))),
-    ...(po ? [hitCard(tr("playoff"), base.filter(g => g[ix.st] === 3 || g[ix.st] === 5))] : [])
+    ...(po ? [hitCard(tr("playoff"), base.filter(isPlayoff))] : [])
   ].join("");
 
   const pool = filtered();
@@ -356,8 +362,9 @@ function drawChart(games, vals) {
   let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="sp-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" style="fill:var(--special-bg)"/><line x1="0" y1="0" x2="0" y2="8" style="stroke:var(--special)" stroke-width="3"/></pattern></defs>`;
   for (let v = 0; v <= max; v += step) s += `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--grid)" stroke-width="1"/><text x="${pl-8}" y="${y(v)+4}" style="fill:var(--mut)" font-size="11" text-anchor="end">${v}</text>`;
   games.forEach((g, i) => {
-    const v = vals[i], x = pl + i*bw + gap/2, w = bw - gap, spec = isSpecial(g);
-    const c = spec ? "special" : v > S.line ? "over" : v < S.line ? "under" : "push";
+    const v = vals[i], x = pl + i*bw + gap/2, w = bw - gap, spec = isSpecial(g), poff = !spec && isPlayoff(g);
+    const tone = spec ? "special" : v > S.line ? "over" : v < S.line ? "under" : "push";
+    const c = poff ? tone + " playoff" : tone;
     const h = Math.max(2, y(0) - y(v));
     s += `<g class="b" data-i="${i}"><rect class="bar ${c}" x="${x}" y="${y(0)-h}" width="${w}" height="${h}" rx="${Math.min(6,w/3)}"/>`;
     if (w > 14) s += `<text x="${x+w/2}" y="${y(0)-h-6}" style="fill:var(--text)" font-size="${w>30?13:10}" font-weight="700" text-anchor="middle">${Number.isInteger(v)?v:v.toFixed(1)}</text>`;
@@ -365,7 +372,7 @@ function drawChart(games, vals) {
     const showLbl = spec || (!nearSpec && (n <= 25 || i % Math.ceil(n/25) === 0 || i === n-1));
     const xlab = spec ? (bw >= 48 ? spName(g) : spTag(g)) : oppBits(g).text;
     if (showLbl) s += `<text x="${x+w/2}" y="${H-pb+18}" style="fill:${spec ? "var(--special)" : "var(--text)"}" font-size="11" font-weight="${spec ? 700 : 400}" text-anchor="middle">${esc(xlab)}</text><text x="${x+w/2}" y="${H-pb+33}" style="fill:var(--mut)" font-size="10" text-anchor="middle">${fmtD(g[ix.date])}</text>`;
-    if (!spec && g[ix.st]===3 && showLbl) s += `<text x="${x+w/2}" y="${H-pb+47}" style="fill:var(--acc)" font-size="9" text-anchor="middle">PO</text>`;
+    if (poff && showLbl) s += `<text x="${x+w/2}" y="${H-pb+47}" style="fill:var(--playoff)" font-size="9" font-weight="700" text-anchor="middle">PO</text>`;
     s += `<rect x="${pl+i*bw}" y="${pt}" width="${bw}" height="${H-pt-pb}" fill="transparent"/></g>`;
   });
   s += `<line x1="${pl}" x2="${W-pr}" y1="${y(S.line)}" y2="${y(S.line)}" style="stroke:var(--refline)" stroke-width="2" stroke-dasharray="7 5"/>
@@ -381,7 +388,7 @@ function drawChart(games, vals) {
     const wl = g[ix.w] ? tr("w_short") : tr("l_short");
     const head = isSpecial(g)
       ? `<b>${fmtD(g[ix.date])} ${esc(spName(g))}</b> · ${wl} ${g[ix.ts]}-${g[ix.os]}`
-      : `<b>${fmtD(g[ix.date])} ${oppBits(g).html}</b> · ${wl} ${g[ix.ts]}-${g[ix.os]}${g[ix.st]===3 ? tr("tip_playoff") : ""}`;
+      : `<b>${fmtD(g[ix.date])} ${oppBits(g).html}</b> · ${wl} ${g[ix.ts]}-${g[ix.os]}${isPlayoff(g) ? tr("tip_playoff") : ""}`;
     tip.innerHTML = `${head}<br>${esc(statName())}: <b>${vals[i]}</b><br>${tr("tip_stats", { min: g[ix.min], pts: g[ix.pts], reb: g[ix.reb], ast: g[ix.ast], fg3: g[ix.fg3], fg3a: g[ix.fg3a] })}${isSpecial(g) ? "<br>" + esc(tr("tip_special")) : ""}`; };
   el.querySelectorAll("g.b").forEach(gEl => {
     const show = ev => { fillTip(+gEl.dataset.i); placeTip(tip, ev.clientX, ev.clientY); };
@@ -436,7 +443,7 @@ function drawLog(games) {
     if (prev && name && name !== prev) body += `<tr class="season-sep"><td colspan="${head.length}">${esc(name)}</td></tr>`;
     prev = name || prev;
     const v = f(g), spec = isSpecial(g);
-    const tag = spec ? ` <small class="asg">${spTag(g)}</small>` : (g[ix.st]===3||g[ix.st]===5?" <small style='color:var(--acc)'>PO</small>":"");
+    const tag = spec ? ` <small class="asg">${spTag(g)}</small>` : (isPlayoff(g) ? ` <small class="po">PO</small>` : "");
     const opp = oppBits(g).html;
     body += `<tr class="${spec?"special":""}"><td>${fmtD(g[ix.date])}${tag}</td><td>${opp}</td><td>${g[ix.w]?tr("w_short"):tr("l_short")} ${g[ix.ts]}-${g[ix.os]}</td>
     <td>${g[ix.min]}</td><td>${g[ix.pts]}</td><td>${g[ix.reb]}</td><td>${g[ix.ast]}</td><td>${g[ix.fg3]}/${g[ix.fg3a]}</td><td>${g[ix.stl]}</td><td>${g[ix.blk]}</td><td>${g[ix.tov]}</td><td>${g[ix.fgm]}/${g[ix.fga]}</td>
@@ -469,7 +476,7 @@ function computeRows() {
   const rows = [];
   for (const p of D.players) {
     if (M.team !== "all" && p.team !== M.team) continue;
-    const base = p.g.filter(g => g[ix.st] !== 9 && inVenue(g, M.venue) && (M.phase==="all"||String(g[ix.st])===M.phase));
+    const base = p.g.filter(g => g[ix.st] !== 9 && inVenue(g, M.venue) && inPhase(g, M.phase));
     if (!base.length) continue;
     const season = base.filter(inCurrentSeason);
     const per = M.period === "all" ? season : base.slice(-(+M.period));
