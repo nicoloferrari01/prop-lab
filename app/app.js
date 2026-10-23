@@ -359,23 +359,60 @@ function render() {
   $("fresh").textContent = freshText();
 }
 
+let chartCache = null, chartDrawnW = -1, chartLock = false;
 function drawChart(games, vals) {
-  const el = $("chart"); const H = 340, pl = 40, pr = 16, pt = 24, pb = 54;
-  if (!games.length) { el.className = "chart"; el.innerHTML = ""; return; }
-  const n = games.length, slot = 76;
-  const W = pl + pr + n * slot;
+  const el = $("chart"); const H = 340, pl = 40, pt = 24, pb = 54;
+  if (!games.length) { chartCache = null; chartDrawnW = el.clientWidth || 0; el.className = "chart"; el.innerHTML = ""; return; }
+  if (chartLock) return;
+  chartLock = true;
+  chartCache = { games, vals };
+  const n = games.length;
   const host = el.clientWidth || 360;
-  const disp = Math.max(host, n * 58);
-  const scale = disp / W;
+  chartDrawnW = host;
+  // One viewBox unit is one CSS pixel, so type stays the same size however wide a bar is.
+  // A right lane holds the line value clear of every bar.
+  const lineStr = String(S.line);
+  const labelW = Math.ceil(lineStr.length * 7.2 + 4);
+  const maxBar = 52, minBar = 36;
+  const pr = 8 + labelW;
+  const plot = Math.max(48, host - pl - pr);
+  const gapOf = slotW => Math.min(10, slotW * 0.18);
+  const fillSlot = plot / n;
+  const fillGap = gapOf(fillSlot);
+  const fillBar = fillSlot - fillGap;
+  let W, disp, gap, slot, x0, barW;
+  const scale = 1;
+  if (fillBar > maxBar) {
+    gap = 10;
+    barW = maxBar;
+    slot = barW + gap;
+    x0 = pl + Math.max(0, (plot - n * slot) / 2);
+    W = host;
+    disp = host;
+  } else if (fillBar >= minBar) {
+    slot = fillSlot;
+    gap = fillGap;
+    barW = fillBar;
+    x0 = pl;
+    W = host;
+    disp = host;
+  } else {
+    barW = 48;
+    gap = 8;
+    slot = barW + gap;
+    x0 = pl;
+    W = pl + n * slot + pr;
+    disp = W;
+  }
   const poTile = 6.5 / scale, poStroke = 1.7 / scale, poEdge = 1.35 / scale;
   const asgStripe = 4 / scale;
   const max = Math.max(S.line * 1.25, ...vals, 1), y = v => pt + (H-pt-pb) * (1 - v/max);
-  const bw = slot, gap = Math.min(10, bw * 0.25);
   const step = max > 40 ? 10 : max > 16 ? 5 : max > 8 ? 2 : 1;
+  const fsVal = 13, fsX = 11, fsDate = 10, fsTag = 9, fsAxis = 11, fsLine = 12;
   let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="sp-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" style="fill:var(--special-bg)"/><line x1="0" y1="0" x2="0" y2="8" style="stroke:var(--special)" stroke-width="3"/></pattern><pattern id="asg-stripe" width="4" height="${asgStripe * 2}" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="4" height="${asgStripe}" style="fill:var(--asg-red)"/><rect x="0" y="${asgStripe}" width="4" height="${asgStripe}" style="fill:var(--asg-white)"/></pattern><pattern id="po-hatch" width="${poTile}" height="${poTile}" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line x1="0" y1="0" x2="0" y2="${poTile}" style="stroke:var(--playoff)" stroke-width="${poStroke}"/></pattern></defs>`;
-  for (let v = 0; v <= max; v += step) s += `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--grid)" stroke-width="1"/><text x="${pl-8}" y="${y(v)+4}" style="fill:var(--mut)" font-size="11" text-anchor="end">${v}</text>`;
+  for (let v = 0; v <= max; v += step) s += `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--grid)" stroke-width="1"/><text x="${pl-8}" y="${y(v)+4}" style="fill:var(--mut)" font-size="${fsAxis}" text-anchor="end">${v}</text>`;
   games.forEach((g, i) => {
-    const v = vals[i], x = pl + i*bw + gap/2, w = bw - gap, spec = isSpecial(g), asg = spec && isAllStar(g), poff = !spec && isPlayoff(g);
+    const v = vals[i], x = x0 + i * slot + gap / 2, w = barW, spec = isSpecial(g), asg = spec && isAllStar(g), poff = !spec && isPlayoff(g);
     const tone = asg ? "allstar" : spec ? "special" : v > S.line ? "over" : v < S.line ? "under" : "push";
     const c = poff ? tone + " playoff" : tone;
     const h = Math.max(2, y(0) - y(v));
@@ -389,14 +426,14 @@ function drawChart(games, vals) {
       s += `<rect class="bar ${c}" x="${x}" y="${yTop}" width="${w}" height="${h}" rx="${rx}"/>`;
       if (poff) s += `<rect class="po-hatch" x="${x}" y="${yTop}" width="${w}" height="${h}" rx="${rx}"/><rect class="po-edge" x="${x}" y="${yTop}" width="${w}" height="${h}" rx="${rx}" stroke-width="${poEdge}" stroke-linejoin="round"/>`;
     }
-    if (w > 14) s += `<text x="${x+w/2}" y="${y(0)-h-6}" style="fill:var(--text)" font-size="${w>30?13:10}" font-weight="700" text-anchor="middle">${Number.isInteger(v)?v:v.toFixed(1)}</text>`;
-    const xlab = spec ? (bw >= 48 ? spName(g) : spTag(g)) : oppBits(g).text;
-    s += `<text class="xlab" x="${x+w/2}" y="${H-pb+18}" style="fill:${spec && !asg ? "var(--special)" : "var(--text)"}" font-size="11" font-weight="${spec ? 700 : 400}" text-anchor="middle">${esc(xlab)}</text><text class="xdate" x="${x+w/2}" y="${H-pb+33}" style="fill:var(--mut)" font-size="10" text-anchor="middle">${fmtD(g[ix.date])}</text>`;
-    if (poff) s += `<text class="xtag" x="${x+w/2}" y="${H-pb+47}" style="fill:var(--playoff)" font-size="9" font-weight="700" text-anchor="middle">PO</text>`;
-    s += `<rect x="${pl+i*bw}" y="${pt}" width="${bw}" height="${H-pt-pb}" fill="transparent"/></g>`;
+    if (w > 14) s += `<text class="bval" x="${x+w/2}" y="${y(0)-h-6}" style="fill:var(--text)" font-size="${fsVal}" font-weight="700" text-anchor="middle">${Number.isInteger(v)?v:v.toFixed(1)}</text>`;
+    const xlab = spec ? (slot >= 48 ? spName(g) : spTag(g)) : oppBits(g).text;
+    s += `<text class="xlab" x="${x+w/2}" y="${H-pb+18}" style="fill:${spec && !asg ? "var(--special)" : "var(--text)"}" font-size="${fsX}" font-weight="${spec ? 700 : 400}" text-anchor="middle">${esc(xlab)}</text><text class="xdate" x="${x+w/2}" y="${H-pb+33}" style="fill:var(--mut)" font-size="${fsDate}" text-anchor="middle">${fmtD(g[ix.date])}</text>`;
+    if (poff) s += `<text class="xtag" x="${x+w/2}" y="${H-pb+47}" style="fill:var(--playoff)" font-size="${fsTag}" font-weight="700" text-anchor="middle">PO</text>`;
+    s += `<rect x="${x0+i*slot}" y="${pt}" width="${slot}" height="${H-pt-pb}" fill="transparent"/></g>`;
   });
   s += `<line x1="${pl}" x2="${W-pr}" y1="${y(S.line)}" y2="${y(S.line)}" style="stroke:var(--refline)" stroke-width="2" stroke-dasharray="7 5"/>
-        <text x="${W-pr}" y="${y(S.line)-6}" style="fill:var(--refline)" font-size="12" font-weight="700" text-anchor="end">${S.line}</text></svg><div class="tip" id="tip"></div>`;
+        <text class="lline" x="${W-6}" y="${y(S.line)-6}" style="fill:var(--refline)" font-size="${fsLine}" font-weight="700" text-anchor="end">${S.line}</text></svg><div class="tip" id="tip"></div>`;
   const inner = disp;
   const scroll = inner > host + 8;
   el.className = "chart" + (scroll ? " wide" : "");
@@ -414,6 +451,16 @@ function drawChart(games, vals) {
     gEl.addEventListener("pointermove", ev => { if (ev.pointerType === "touch") return; show(ev); });
     gEl.addEventListener("pointerleave", ev => { if (ev.pointerType === "touch") return; tip.style.display = "none"; });
   });
+  chartLock = false;
+}
+if (window.ResizeObserver && $("chart")) {
+  new ResizeObserver(() => {
+    const el = $("chart");
+    if (!chartCache || !el) return;
+    const w = el.clientWidth;
+    if (!w || Math.abs(w - chartDrawnW) < 2) return;
+    drawChart(chartCache.games, chartCache.vals);
+  }).observe($("chart"));
 }
 
 function safeInsets() {
@@ -422,12 +469,6 @@ function safeInsets() {
   return { t: n("--sat"), r: n("--sar"), b: n("--sab"), l: n("--sal") };
 }
 function placeTip(tip, cx, cy) {
-  tip.style.visibility = "hidden";
-  tip.style.display = "block";
-  tip.style.left = "0px";
-  tip.style.top = "0px";
-  const base = tip.getBoundingClientRect();
-  const w = base.width, h = base.height;
   const vv = window.visualViewport;
   const viewL = vv ? vv.offsetLeft : 0;
   const viewT = vv ? vv.offsetTop : 0;
@@ -441,14 +482,44 @@ function placeTip(tip, cx, cy) {
   const minT = viewT + sa.t + m;
   const maxR = viewR - sa.r - m;
   const maxB = viewB - bottomChrome - m;
+  const chart = $("chart");
+  const cr = chart ? chart.getBoundingClientRect() : null;
+  let boxL = minL, boxR = maxR, boxT = minT, boxB = maxB;
+  if (cr) {
+    const iL = Math.max(minL, cr.left + 8);
+    const iR = Math.min(maxR, cr.right - 8);
+    const iT = Math.max(minT, cr.top + 8);
+    const iB = Math.min(maxB, cr.bottom - 8);
+    if (iR - iL >= 120) { boxL = iL; boxR = iR; }
+    if (iB - iT >= 64) { boxT = iT; boxB = iB; }
+  }
+  tip.style.visibility = "hidden";
+  tip.style.display = "block";
+  tip.style.left = "0px";
+  tip.style.top = "0px";
+  tip.style.maxWidth = Math.max(80, boxR - boxL) + "px";
+  const base = tip.getBoundingClientRect();
+  const w = Math.min(base.width, boxR - boxL), h = base.height;
   let left = cx + gap, top = cy + gap;
-  if (left + w > maxR) left = cx - gap - w;
-  if (top + h > maxB) top = cy - gap - h;
-  if (top < minT) top = cy + gap;
-  left = Math.max(minL, Math.min(left, maxR - w));
-  top = Math.max(minT, Math.min(top, maxB - h));
+  if (left + w > boxR) left = cx - gap - w;
+  if (top + h > boxB) top = cy - gap - h;
+  if (top < boxT) top = cy + gap;
+  left = Math.max(boxL, Math.min(left, boxR - w));
+  top = Math.max(boxT, Math.min(top, boxB - h));
+  if (top + h > maxB) top = Math.max(minT, maxB - h);
+  if (left + w > maxR) left = Math.max(minL, maxR - w);
   tip.style.left = (left - base.left) + "px";
   tip.style.top = (top - base.top) + "px";
+  const placed = tip.getBoundingClientRect();
+  let dx = 0, dy = 0;
+  if (placed.right > maxR) dx -= placed.right - maxR;
+  if (placed.left + dx < minL) dx += minL - (placed.left + dx);
+  if (placed.bottom > maxB) dy -= placed.bottom - maxB;
+  if (placed.top + dy < minT) dy += minT - (placed.top + dy);
+  if (dx || dy) {
+    tip.style.left = (parseFloat(tip.style.left) + dx) + "px";
+    tip.style.top = (parseFloat(tip.style.top) + dy) + "px";
+  }
   tip.style.visibility = "visible";
 }
 
