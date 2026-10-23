@@ -669,7 +669,7 @@ function renderMatchup() {
   setMu($("mu-venue"), [["side", "Come in questa partita"], ["all", "Tutte"]], "venue");
   setMu($("mu-min"), [[0, "0"], [10, "10"], [20, "20"]], "minMin");
   const sides = [[g.away, g.home, "away"], [g.home, g.away, "home"]];
-  $("mu-links").innerHTML = `<span class="lbl">Apri in Mercati</span>` + sides.map(([t, o], i) => `<button class="linkbtn" data-i="${i}">${t.abbr} vs ${o.abbr}</button>`).join("");
+  $("mu-links").innerHTML = `<span class="lbl">Apri in Listone</span>` + sides.map(([t, o], i) => `<button class="linkbtn" data-i="${i}">${t.abbr} vs ${o.abbr}</button>`).join("");
   $("mu-links").querySelectorAll("button").forEach(b => b.onclick = () => { const [t, o, side] = sides[+b.dataset.i];
     const preset = { stat: MU.stat, team: t.abbr, opp: o.abbr, venue: MU.venue === "side" ? side : "all", phase: "all", period: "all", minMin: MU.minMin, minG: 1, lines: {}, fixed: null, sort: "h10", dir: -1 };
     navigate("markets", "push", () => { Object.assign(M, preset); fromGame = null; pinGame = null; }); });
