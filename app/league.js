@@ -149,8 +149,6 @@ document.querySelectorAll(".league-btn").forEach(leagueBtn => leagueBtn.addEvent
 }));
 leaguePop.addEventListener("click", e => {
   if (e.target === leaguePop) { setLeagueExpanded(false); return; }
-  const langBtn = e.target.closest("[data-lang]");
-  if (langBtn) { I18n.set(langBtn.dataset.lang); return; }
   const b = e.target.closest(".league-opt");
   if (b) choose(b.dataset.league);
 });
