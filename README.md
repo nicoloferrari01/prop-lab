@@ -11,7 +11,7 @@ Visualizzatore stile Outlier: barre partita per partita vs una linea regolabile,
 ## Viste
 - Giocatrice (`#giocatrice`): barre partita per partita vs linea, hit rate, game log.
 - Mercati (`#mercati`): screener di tutte le giocatrici per mercato (Punti, Rimbalzi, Assist, Triple segnate, P+R+A, P+R, P+A, R+A, Recuperi, Stoppate, Rec+Stop, Palle perse), con linea per giocatrice (mediana arrotondata a .5, modificabile per riga) o linea fissa, hit rate L5/L10/L20/stagione/vs avversaria, sparkline ultime 10, filtri e ordinamento. Clic su una riga apre la scheda con lo stesso mercato e la stessa linea.
-- Partite (`#partite`): prossime partite e risultati degli ultimi 7 giorni dallo scoreboard ESPN (live all'apertura, cache 10 min, fallback `/api/schedule` di server.py), orari Europe/Rome, loghi, casa/trasferta, stato serie playoff, arena, TV. Fuori stagione: messaggio + ultimi risultati.
+- Partite (`#partite`): prossime partite e risultati degli ultimi 7 giorni dallo scoreboard ESPN (live all'apertura, cache 10 min, fallback `/api/schedule` di server.py), orari nel fuso del browser (sigla breve, es. CET o EDT), raggruppati per Oggi/Domani sulla data locale, loghi, casa/trasferta, stato serie playoff, arena, TV. Fuori stagione: messaggio + ultimi risultati.
 - Matchup (`#partita-<id>`): roster delle due squadre (giocatrici nei dati) con media, linea, sparkline, hit rate L10/stagione/vs avversaria, filtro casa/trasferta come nella partita; clic su una giocatrice apre la scheda, i pulsanti aprono Mercati filtrato (squadra A vs B).
 - Nella scheda giocatrice la card "vs" usa automaticamente l'avversaria della prossima partita in calendario.
 

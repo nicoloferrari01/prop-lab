@@ -521,9 +521,59 @@ $("m-resetlines").onclick = () => { M.lines = {}; renderMarkets(); };
 // ================= PARTITE + MATCHUP =================
 let SCHED = null;
 const MU = { id: null, stat: "pts", venue: "side", minMin: 10 };
-const ROME = { timeZone: "Europe/Rome" };
-const fmtWhen = iso => { const d = new Date(iso);
-  return d.toLocaleDateString("it-IT", { ...ROME, weekday: "short", day: "2-digit", month: "short" }) + " · " + d.toLocaleTimeString("it-IT", { ...ROME, hour: "2-digit", minute: "2-digit" }); };
+const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined; } catch (e) { return undefined; } })();
+const zoneOpts = TZ ? { timeZone: TZ } : {};
+function zoneShort(date) {
+  try {
+    const parts = new Intl.DateTimeFormat(undefined, { ...zoneOpts, timeZoneName: "short" }).formatToParts(date);
+    return (parts.find(p => p.type === "timeZoneName") || {}).value || "";
+  } catch (e) { return ""; }
+}
+function localKey(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  try { return new Intl.DateTimeFormat("en-CA", { ...zoneOpts, year: "numeric", month: "2-digit", day: "2-digit" }).format(d); }
+  catch (e) { return d.toISOString().slice(0, 10); }
+}
+function shiftKey(key, days) {
+  const [y, m, d] = key.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+}
+function dayWord(date) {
+  const key = localKey(date), today = localKey(new Date());
+  if (key === today) return "Oggi";
+  if (key === shiftKey(today, 1)) return "Domani";
+  return "";
+}
+function fmtClock(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const time = d.toLocaleTimeString("it-IT", { ...zoneOpts, hour: "2-digit", minute: "2-digit" });
+  const z = zoneShort(d);
+  return z ? `${time} ${z}` : time;
+}
+const fmtWhen = iso => {
+  const d = new Date(iso);
+  const date = dayWord(d) || d.toLocaleDateString("it-IT", { ...zoneOpts, weekday: "short", day: "2-digit", month: "short" });
+  return `${date} · ${fmtClock(d)}`;
+};
+function dayHeading(iso) {
+  const d = new Date(iso);
+  return dayWord(d) || d.toLocaleDateString("it-IT", { ...zoneOpts, weekday: "short", day: "2-digit", month: "short" });
+}
+function gamesHTML(list) {
+  let html = "", prev = "";
+  for (const g of list) {
+    const key = localKey(g.date);
+    if (key !== prev) { html += `<div class="g-day">${esc(dayHeading(g.date))}</div>`; prev = key; }
+    html += gameCard(g);
+  }
+  return html;
+}
+function paintZoneNotes() {
+  const z = zoneShort(new Date());
+  const note = $("g-rec-note");
+  if (note) note.textContent = z ? `Ultimi 7 giorni · orari ${z}` : "Ultimi 7 giorni";
+}
 const logo = t => t.logo ? `<img src="${t.logo}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'phlogo'}))">` : `<span class="phlogo"></span>`;
 function sideBlock(t, lose) {
   return `<div class="g-side${lose ? " lose" : ""}">${logo(t)}<b>${t.short || t.abbr}</b>${t.record ? `<small>${t.record}</small>` : ""}</div>`;
@@ -539,22 +589,25 @@ function gameCard(g) {
   const mid = fin || live ? `<div class="g-vs score">${g.away.score ?? "–"} – ${g.home.score ?? "–"}</div>` : `<div class="g-vs">vs</div>`;
   const headline = live ? "In corso" + (g.detail ? " · " + g.detail : "") : (itNote(g.note) || (fin ? "Finale" : (g.st === 3 || g.st === 5 ? "Playoff" : "Regular season")));
   return `<div class="game" data-id="${g.id}">
-    <div class="g-top"><div class="g-when">${fmtWhen(g.date)}</div><div class="g-note${live ? " live" : ""}">${headline}</div></div>
+    <div class="g-top"><div class="g-when">${esc(fmtWhen(g.date))}</div><div class="g-note${live ? " live" : ""}">${headline}</div></div>
     <div class="g-match">${sideBlock(g.away, fin && !g.away.winner && g.home.winner)}${mid}${sideBlock(g.home, fin && !g.home.winner && g.away.winner)}</div>
     <div class="g-bot">${g.series ? `<div class="series">${itSeries(g.series)}</div>` : ""}<div>${[g.venue, g.tv ? "TV: " + g.tv : ""].filter(Boolean).join(" · ")}</div></div></div>`;
 }
 function renderGames() {
   $("fresh").textContent = freshText();
+  paintZoneNotes();
   if (!SCHED) { $("g-up").innerHTML = `<div class="empty"><b>Carico il calendario…</b></div>`; $("g-rec").innerHTML = ""; $("g-src").textContent = ""; return; }
-  const now = Date.now();
-  const up = SCHED.games.filter(g => g.state !== "post" && new Date(g.date).getTime() > now - 4 * 3600e3);
-  let rec = SCHED.games.filter(g => g.state === "post" && now - new Date(g.date).getTime() < 7 * 864e5).reverse();
+  const now = Date.now(), today = localKey(new Date()), start = shiftKey(today, -6);
+  const byDate = (a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+  const up = SCHED.games.filter(g => g.state !== "post" && new Date(g.date).getTime() > now - 4 * 3600e3).sort(byDate);
+  let rec = SCHED.games.filter(g => g.state === "post" && localKey(g.date) >= start && localKey(g.date) <= today).sort((a, b) => byDate(b, a));
   if (!rec.length) rec = SCHED.games.filter(g => g.state === "post").slice(-6).reverse();
   const src = { live: "Calendario live ESPN", cache: "Calendario in cache", stale: "Offline: calendario salvato", offline: "Offline: calendario non disponibile" }[SCHED.source];
-  $("g-src").textContent = `${src}${SCHED.ts ? " · " + new Date(SCHED.ts).toLocaleTimeString("it-IT", { ...ROME, hour: "2-digit", minute: "2-digit" }) : ""} · orari Europe/Rome`;
-  $("g-up").innerHTML = up.length ? up.slice(0, 24).map(gameCard).join("") :
+  const z = zoneShort(new Date());
+  $("g-src").textContent = `${src}${SCHED.ts ? " · " + fmtClock(SCHED.ts) : ""}${z ? " · orari " + z : ""}`;
+  $("g-up").innerHTML = up.length ? gamesHTML(up.slice(0, 24)) :
     `<div class="empty"><b>${SCHED.source === "offline" ? "Calendario non disponibile offline" : "Nessuna partita in programma"}</b>${SCHED.source === "offline" ? "Riapri l'app quando sei online." : L.pause}</div>`;
-  $("g-rec").innerHTML = rec.length ? rec.map(gameCard).join("") : `<div class="empty"><b>Nessun risultato recente</b></div>`;
+  $("g-rec").innerHTML = rec.length ? gamesHTML(rec) : `<div class="empty"><b>Nessun risultato recente</b></div>`;
 }
 document.addEventListener("click", e => {
   const c = e.target.closest(".game");
@@ -602,7 +655,7 @@ function renderMatchup() {
   const mid = fin || live ? `<div class="g-vs score">${g.away.score ?? "–"} – ${g.home.score ?? "–"}</div>` : `<div class="g-vs">vs</div>`;
   const headline = live ? "In corso" + (g.detail ? " · " + g.detail : "") : (itNote(g.note) || (fin ? "Finale" : (g.st === 3 || g.st === 5 ? "Playoff" : "Regular season")));
   $("mu-head").innerHTML = `<button class="back" id="mu-back">‹ Tutte le partite</button>
-    <div class="g-top"><div class="g-when">${fmtWhen(g.date)}</div><div class="g-note${live ? " live" : ""}">${headline}</div></div>
+    <div class="g-top"><div class="g-when">${esc(fmtWhen(g.date))}</div><div class="g-note${live ? " live" : ""}">${headline}</div></div>
     <div class="g-match mu-match">${sideBlock(g.away, fin && !g.away.winner && g.home.winner)}${mid}${sideBlock(g.home, fin && !g.home.winner && g.away.winner)}</div>
     <div class="g-bot">${g.series ? `<div class="series">${itSeries(g.series)}</div>` : ""}<div>${[g.venue, g.tv ? "TV: " + g.tv : ""].filter(Boolean).join(" · ")}</div></div>`;
   $("mu-back").onclick = () => navigate("games", "push", () => { pinGame = MU.id; fromGame = null; });

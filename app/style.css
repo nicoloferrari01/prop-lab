@@ -234,6 +234,7 @@ footer{color:var(--mut);font-size:11px;text-align:center;padding:22px 16px calc(
   transition:transform .15s,box-shadow .15s}
 .game:hover{transform:translateY(-2px);box-shadow:var(--bevel), 0 18px 36px rgba(0,0,0,.28)}
 .g-top,.g-bot{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;width:100%;min-width:0}
+.g-day{grid-column:1 / -1;text-align:center;font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text);padding-top:2px}
 .g-when{color:var(--mut);font-size:12px;font-weight:650}
 .g-note{font-size:13px;font-weight:650;letter-spacing:-.01em;text-wrap:balance}
 .g-note.live{color:var(--bad)}

@@ -1,7 +1,8 @@
 // Aggiornamento all'apertura, per lega: partite concluse dopo l'ultima data del file incluso.
 window.Update = (() => {
   const CACHE_MIN = 10, TIMEOUT = 8000, CONC = 6;
-  const hhmm = d => d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined; } catch (e) { return undefined; } })();
+  const hhmm = d => d.toLocaleTimeString("it-IT", Object.assign({ hour: "2-digit", minute: "2-digit" }, TZ ? { timeZone: TZ } : {}));
   const etDate = iso => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(iso));
   const plural = n => n === 1 ? "1 nuova partita" : `${n} nuove partite`;
   async function getJSON(url) {
