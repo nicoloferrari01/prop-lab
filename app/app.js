@@ -367,7 +367,7 @@ function drawChart(games, vals) {
   const host = el.clientWidth || 360;
   const disp = Math.max(host, n * 58);
   const scale = disp / W;
-  const poTile = 6.5 / scale, poStroke = 1.7 / scale;
+  const poTile = 6.5 / scale, poStroke = 1.7 / scale, poEdge = 1.35 / scale;
   const asgStripe = 4 / scale;
   const max = Math.max(S.line * 1.25, ...vals, 1), y = v => pt + (H-pt-pb) * (1 - v/max);
   const bw = slot, gap = Math.min(10, bw * 0.25);
@@ -387,7 +387,7 @@ function drawChart(games, vals) {
       s += `<clipPath id="asgclip${i}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" rx="${rx}"/></clipPath><g clip-path="url(#asgclip${i})"><rect class="bar allstar" x="${x}" y="${yTop}" width="${w}" height="${h}"/><rect class="asg-canton" x="${x}" y="${yTop}" width="${cw}" height="${ch}"/></g>`;
     } else {
       s += `<rect class="bar ${c}" x="${x}" y="${yTop}" width="${w}" height="${h}" rx="${rx}"/>`;
-      if (poff) s += `<rect class="po-hatch" x="${x}" y="${yTop}" width="${w}" height="${h}" rx="${rx}"/>`;
+      if (poff) s += `<rect class="po-hatch" x="${x}" y="${yTop}" width="${w}" height="${h}" rx="${rx}"/><rect class="po-edge" x="${x}" y="${yTop}" width="${w}" height="${h}" rx="${rx}" stroke-width="${poEdge}" stroke-linejoin="round"/>`;
     }
     if (w > 14) s += `<text x="${x+w/2}" y="${y(0)-h-6}" style="fill:var(--text)" font-size="${w>30?13:10}" font-weight="700" text-anchor="middle">${Number.isInteger(v)?v:v.toFixed(1)}</text>`;
     const xlab = spec ? (bw >= 48 ? spName(g) : spTag(g)) : oppBits(g).text;

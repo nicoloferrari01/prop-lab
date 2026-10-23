@@ -202,6 +202,7 @@ svg .bar.over{fill:var(--bar-over);stroke:none}
 svg .bar.under{fill:var(--bar-under);stroke:none}
 svg .bar.push{fill:var(--bar-push);stroke:none}
 svg .po-hatch{fill:url(#po-hatch);stroke:none;pointer-events:none}
+svg .po-edge{fill:none;stroke:var(--playoff);pointer-events:none}
 svg .bar.special{fill:url(#sp-hatch);stroke:var(--special);stroke-width:2.5}
 svg .bar.allstar{fill:url(#asg-stripe);stroke:none}
 svg .asg-canton{fill:var(--asg-blue);stroke:none;pointer-events:none}
