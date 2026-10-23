@@ -15,7 +15,7 @@
 </head>
 <body>
 <header class="top" id="top">
-  <div class="brand"><img class="logo" src="icon.svg" alt="" width="28" height="28"><span class="dot pending" id="status-dot" title="Controllo nuove partite…"></span><button type="button" class="brand-btn" id="league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span id="league-label">NBA</span> <b>Prop Lab</b></button></div>
+  <div class="brand"><img class="logo" src="icon.svg" alt="" width="28" height="28"><span class="dot pending" id="status-dot" title="Controllo nuove partite…"></span><button type="button" class="brand-btn" id="league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span id="league-label">NBA</span> <b>Prop Lab</b></button><button type="button" class="help" id="help" aria-label="Guida" aria-haspopup="dialog" aria-controls="guide">i</button></div>
   <nav class="tabs" id="tabs">
     <button data-v="player"><span class="tab-l">Giocatrice</span><span class="tab-s">Gioc.</span></button>
     <button data-v="markets"><span class="tab-l">Mercati</span><span class="tab-s">Merc.</span></button>
@@ -151,6 +151,72 @@
   <div class="fresh" id="fresh"></div>
   <div class="foot-note" id="foot-note"></div>
 </footer>
+<div id="guide" class="guide" hidden role="dialog" aria-modal="true" aria-labelledby="guide-t0">
+  <div class="guide-box">
+    <div class="guide-view" id="guide-view">
+      <div class="guide-track" id="guide-track">
+        <section class="guide-slide" aria-hidden="false">
+          <article class="guide-card">
+            <h2 id="guide-t0">Le colonne</h2>
+            <p>Ogni colonna è una partita: verde sopra la linea, rosso sotto. La linea si regola con +/−; tocca una colonna per i dettagli.</p>
+            <div class="demo" aria-hidden="true">
+              <div class="demo-chart">
+                <span class="demo-line"></span>
+                <i class="up" style="height:78%"></i>
+                <i class="dn" style="height:30%"></i>
+                <i class="up" style="height:92%"></i>
+                <i class="dn" style="height:24%"></i>
+                <i class="up" style="height:66%"></i>
+                <i class="dn" style="height:42%"></i>
+              </div>
+              <div class="demo-step"><span>−</span><b>19.5</b><span>+</span></div>
+            </div>
+          </article>
+        </section>
+        <section class="guide-slide" aria-hidden="true" inert>
+          <article class="guide-card">
+            <h2 id="guide-t1">Le percentuali</h2>
+            <p>Stagione conta solo la stagione in corso; Ultime 5, 10 e 20 includono anche le passate. Il cursore Tutte, Casa o Trasferta filtra le statistiche e parte da Tutte.</p>
+            <div class="demo" aria-hidden="true">
+              <div class="demo-chips"><span>Ultime 5</span><span>10</span><span>20</span><span class="on">Stagione</span></div>
+              <div class="seg demo-seg" data-i="0"><span class="seg-thumb"></span><b>Tutte</b><b>Casa</b><b>Trasferta</b></div>
+            </div>
+          </article>
+        </section>
+        <section class="guide-slide" aria-hidden="true" inert>
+          <article class="guide-card">
+            <h2 id="guide-t2">Partite e giocatori</h2>
+            <p>L'app si apre su Partite: tocca una partita per vedere i giocatori. «Prossima partita contro X» sotto un giocatore apre quella partita, e indietro torna lì.</p>
+            <div class="demo" aria-hidden="true">
+              <div class="demo-game"><span>ATL</span><span class="vs">@</span><span>NY</span></div>
+              <div class="demo-next">Prossima: vs NY <span class="chev">›</span></div>
+            </div>
+          </article>
+        </section>
+        <section class="guide-slide" aria-hidden="true" inert>
+          <article class="guide-card">
+            <h2 id="guide-t3">Simboli</h2>
+            <p>🚑 è fuori e 🤔 in dubbio; le colonne tratteggiate sono partite speciali, come l'All-Star, visibili ma escluse da percentuali e medie. Tocca «Prop Lab» per cambiare campionato.</p>
+            <div class="demo" aria-hidden="true">
+              <div class="demo-marks"><span>🚑</span><span>🤔</span><span class="demo-col"><i class="demo-hatch"></i><small>ASG</small></span></div>
+              <div class="demo-brand"><b>Prop Lab</b></div>
+            </div>
+          </article>
+        </section>
+      </div>
+    </div>
+    <div class="guide-dots" id="guide-dots" role="tablist" aria-label="Schede della guida">
+      <button type="button" class="guide-dot on" role="tab" aria-selected="true" aria-label="Le colonne"></button>
+      <button type="button" class="guide-dot" role="tab" aria-selected="false" aria-label="Le percentuali"></button>
+      <button type="button" class="guide-dot" role="tab" aria-selected="false" aria-label="Partite e giocatori"></button>
+      <button type="button" class="guide-dot" role="tab" aria-selected="false" aria-label="Simboli"></button>
+    </div>
+    <div class="guide-nav">
+      <button type="button" id="guide-skip">Salta</button>
+      <button type="button" id="guide-next">Avanti</button>
+    </div>
+  </div>
+</div>
 <div id="league-pop" class="league-pop" hidden>
   <div class="league-sheet card" role="dialog" aria-modal="true" aria-labelledby="league-h">
     <div class="league-h" id="league-h">Campionato</div>

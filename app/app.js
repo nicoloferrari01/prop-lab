@@ -872,7 +872,116 @@ function openLeague(data, league) {
   applyChrome(); foot();
   bootHistory();
   setStatus("Controllo nuove partite…", "pending");
+  guideMaybe();
 }
+const GUIDE_KEY = "prop-lab-guide";
+let gi = 0, gDrag = null;
+function guideSeen() {
+  try { return localStorage.getItem(GUIDE_KEY) === "1"; } catch (e) { return false; }
+}
+function guideMark() {
+  try { localStorage.setItem(GUIDE_KEY, "1"); } catch (e) {}
+}
+function guideAt(i, animate) {
+  const root = $("guide"), view = $("guide-view"), track = $("guide-track");
+  if (!root || !view || !track) return;
+  const slides = [...track.querySelectorAll(":scope > .guide-slide")];
+  const dots = [...document.querySelectorAll("#guide-dots .guide-dot")];
+  const next = $("guide-next");
+  if (!slides.length) return;
+  gi = Math.max(0, Math.min(slides.length - 1, i));
+  const w = view.clientWidth || 1;
+  track.style.transition = animate === false ? "none" : "transform .38s cubic-bezier(.22,.85,.28,1)";
+  track.style.transform = `translate3d(${-gi * w}px,0,0)`;
+  if (next) next.textContent = gi === slides.length - 1 ? "Inizia" : "Avanti";
+  dots.forEach((d, k) => {
+    d.classList.toggle("on", k === gi);
+    d.setAttribute("aria-selected", k === gi ? "true" : "false");
+  });
+  slides.forEach((s, k) => {
+    const on = k === gi;
+    s.setAttribute("aria-hidden", on ? "false" : "true");
+    if (on) s.removeAttribute("inert");
+    else s.setAttribute("inert", "");
+  });
+  const h = slides[gi].querySelector("h2");
+  if (h && h.id) root.setAttribute("aria-labelledby", h.id);
+}
+function guideOpen() {
+  const root = $("guide");
+  if (!root) return;
+  gDrag = null;
+  root.hidden = false;
+  document.body.classList.add("guide-on");
+  guideAt(0, false);
+  const next = $("guide-next");
+  if (next) next.focus({ preventScroll: true });
+}
+function guideClose() {
+  const root = $("guide");
+  if (!root || root.hidden) return;
+  gDrag = null;
+  guideMark();
+  root.hidden = true;
+  document.body.classList.remove("guide-on");
+}
+function guideMaybe() {
+  if (!guideSeen()) guideOpen();
+}
+function initGuide() {
+  const root = $("guide"), view = $("guide-view"), track = $("guide-track");
+  if (!root || !view || !track || root.dataset.ready) return;
+  root.dataset.ready = "1";
+  $("guide-skip").addEventListener("click", guideClose);
+  $("guide-next").addEventListener("click", () => {
+    const n = track.querySelectorAll(":scope > .guide-slide").length;
+    if (gi >= n - 1) guideClose();
+    else guideAt(gi + 1);
+  });
+  document.querySelectorAll("#guide-dots .guide-dot").forEach((d, i) => d.addEventListener("click", () => guideAt(i)));
+  const help = $("help");
+  if (help) help.addEventListener("click", e => { e.stopPropagation(); guideOpen(); });
+  view.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    gDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, lock: false };
+  });
+  view.addEventListener("pointermove", e => {
+    if (!gDrag || e.pointerId !== gDrag.id) return;
+    const dx = e.clientX - gDrag.x, dy = e.clientY - gDrag.y;
+    if (!gDrag.lock) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dy) > Math.abs(dx)) { gDrag = null; return; }
+      gDrag.lock = true;
+      try { view.setPointerCapture(e.pointerId); } catch (err) {}
+      track.style.transition = "none";
+    }
+    gDrag.dx = dx;
+    const w = view.clientWidth || 1;
+    track.style.transform = `translate3d(${-gi * w + dx}px,0,0)`;
+    e.preventDefault();
+  }, { passive: false });
+  const endDrag = e => {
+    if (!gDrag || e.pointerId !== gDrag.id) return;
+    const dx = gDrag.dx, locked = gDrag.lock;
+    gDrag = null;
+    if (!locked) return;
+    const w = view.clientWidth || 1;
+    const step = Math.min(56, w * 0.18);
+    if (dx <= -step) guideAt(gi + 1);
+    else if (dx >= step) guideAt(gi - 1);
+    else guideAt(gi);
+  };
+  view.addEventListener("pointerup", endDrag);
+  view.addEventListener("pointercancel", endDrag);
+  document.addEventListener("keydown", e => {
+    if (root.hidden) return;
+    if (e.key === "Escape") { e.preventDefault(); guideClose(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); guideAt(gi + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); guideAt(gi - 1); }
+  });
+  window.addEventListener("resize", () => { if (!root.hidden) guideAt(gi, false); });
+}
+initGuide();
 return {
   data: () => D,
   league: () => L,

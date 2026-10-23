@@ -48,8 +48,8 @@ body{margin:0;min-height:100vh;min-height:100dvh;color:var(--text);display:flex;
   font:14px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,"Helvetica Neue",system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;letter-spacing:-.01em}
 /* glint prismatico solo in alto a destra e in basso a sinistra; il resto è un filo neutro */
-.top::after,.controls::after,.card::after,.hit::after,.avg::after,.player::after,.game::after,.results::after,.tip::after,.inj-pop::after,.nextg::after,.filters::before,
-.chips button.on::after,.tabs button.on::after,.league-opt.on::after,.seg-thumb::after{
+.top::after,.controls::after,.card::after,.hit::after,.avg::after,.player::after,.game::after,.results::after,.tip::after,.inj-pop::after,.nextg::after,.filters::before,.guide-card::after,
+.chips button.on::after,.tabs button.on::after,.league-opt.on::after,.seg-thumb::after,.demo-chips span.on::after{
   content:"";position:absolute;inset:0;border-radius:inherit;padding:1.7px;pointer-events:none;box-sizing:border-box;z-index:1;
   background:
     radial-gradient(46px 8px at calc(100% - 10px) 0, rgba(255,59,72,.95), rgba(255,145,40,.82) 26%, rgba(255,214,70,.5) 48%, rgba(70,220,160,.22) 70%, transparent 90%),
@@ -62,7 +62,7 @@ body{margin:0;min-height:100vh;min-height:100dvh;color:var(--text);display:flex;
   mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite:exclude}
 .player::after,.chips button.on::after,.tabs button.on::after,.league-opt.on::after,.seg-thumb::after{opacity:1;filter:blur(.9px)}
-.top,.controls,.card,.hit,.avg,.player,.game,.results,.tip,.inj-pop,.nextg{
+.top,.controls,.card,.hit,.avg,.player,.game,.results,.tip,.inj-pop,.nextg,.guide-card{
   position:relative;background:var(--slab-bg);box-shadow:var(--shadow);border:1px solid var(--hair)}
 .card:has(.games){background:none;box-shadow:none;padding-left:0;padding-right:0;border:0}
 .card:has(.games)::after{content:none}
@@ -70,6 +70,8 @@ body{margin:0;min-height:100vh;min-height:100dvh;color:var(--text);display:flex;
 .brand{font-size:16px;font-weight:600;letter-spacing:-.02em;display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:0}
 .brand-btn{appearance:none;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;letter-spacing:inherit;cursor:pointer;display:inline-flex;align-items:baseline;gap:6px;min-width:0}
 .brand-btn b{font-weight:700;color:var(--text)}
+.help{appearance:none;-webkit-appearance:none;margin-left:auto;width:22px;height:22px;padding:0;flex:0 0 auto;border-radius:50%;border:1px solid var(--stroke);background:transparent;color:var(--mut);font:italic 600 13px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;letter-spacing:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.help:hover{color:var(--text);border-color:var(--hair)}
 .league-pop{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:24px 16px calc(24px + var(--sab));background:rgba(0,0,0,.46)}
 .league-pop[hidden]{display:none}
 .league-sheet{width:min(280px,100%);border-radius:var(--r-lg);padding:16px 16px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px}
@@ -263,7 +265,9 @@ footer{color:var(--mut);font-size:11px;text-align:center;padding:22px 16px calc(
 @media (min-width:980px){.mu-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media (max-width:760px){
   .top{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"brand" "search" "tabs";gap:8px;padding:8px 10px;margin:8px 12px 0}
-  .brand{grid-area:brand}
+  .brand{grid-area:brand;width:100%}
+  .top.slim .brand{width:auto}
+  .top.slim .help{width:20px;height:20px;font-size:12px}
   .search{grid-area:search;max-width:none;min-width:0;margin:0}
   .tabs{grid-area:tabs;width:100%}
   .tabs button{flex:1 1 0;min-width:0;padding:0 6px}
@@ -295,11 +299,71 @@ footer{color:var(--mut);font-size:11px;text-align:center;padding:22px 16px calc(
 }
 @media (prefers-reduced-motion: reduce){
   .dot.pending{animation:none}
-  .game,.chips button,.tabs button,.seg-thumb{transition:none}
+  .game,.chips button,.tabs button,.seg-thumb,.guide-track,.guide-dot::before{transition:none}
   .game:hover{transform:none}
 }
 @media (prefers-reduced-transparency: reduce){
   :root{--slab-bg:var(--slab-solid)}
-  .top::after,.controls::after,.card::after,.hit::after,.avg::after,.player::after,.game::after,.results::after,.tip::after,.inj-pop::after,.nextg::after,.filters::before,
-  .chips button.on::after,.tabs button.on::after,.league-opt.on::after,.seg-thumb::after{opacity:.22;filter:none}
+  .top::after,.controls::after,.card::after,.hit::after,.avg::after,.player::after,.game::after,.results::after,.tip::after,.inj-pop::after,.nextg::after,.filters::before,.guide-card::after,
+  .chips button.on::after,.tabs button.on::after,.league-opt.on::after,.seg-thumb::after,.demo-chips span.on::after{opacity:.22;filter:none}
 }
+
+/* Guida al primo avvio: bianco su nero, anche con il tema chiaro. */
+.guide{
+  position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;overflow:auto;
+  padding:calc(20px + var(--sat)) calc(16px + var(--sar)) calc(72px + var(--sab)) calc(16px + var(--sal));
+  background:#000;color:#fff;color-scheme:dark;
+  --bg:#000;--text:#fff;--mut:rgba(255,255,255,.72);--faint:rgba(255,255,255,.46);
+  --slab:#141414;--slab-solid:#121212;
+  --slab-bg:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 38%), linear-gradient(180deg, #1c1c1c, #0a0a0a);
+  --stroke:rgba(255,255,255,.16);--line:rgba(255,255,255,.10);--hair:rgba(255,255,255,.22);
+  --sel-text:#fff;--bar-over:#8dffc2;--bar-under:#ff6d84;--ctl:#161616;
+  --bevel:inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(255,255,255,.08);
+  --depth:0 14px 32px rgba(0,0,0,.50), 0 2px 6px rgba(0,0,0,.38);
+  --shadow:var(--bevel), var(--depth);--track:rgba(255,255,255,.06);
+  --special:#c4b5fd;--special-bg:rgba(196,181,253,.22);
+}
+body.guide-on{overflow:hidden}
+.guide-box{width:min(100%,400px);margin:auto;display:flex;flex-direction:column;align-items:center;gap:16px}
+.guide-view{width:100%;overflow:hidden;touch-action:none}
+.guide-track{display:flex;width:100%}
+.guide-slide{flex:0 0 100%;width:100%;min-width:0;box-sizing:border-box;padding:10px 6px 28px;display:flex}
+.guide-card{flex:1;min-width:0;border-radius:var(--r-xl);padding:22px 18px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px}
+.guide-card h2{font-size:22px;font-weight:700;letter-spacing:-.03em}
+.guide-card p{margin:0;color:var(--mut);font-size:15px;line-height:1.45;text-wrap:balance}
+.demo{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;margin-top:2px}
+.demo-chart{position:relative;width:min(220px,100%);height:96px;display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:0 6px}
+.demo-chart i{width:18px;border-radius:5px 5px 2px 2px;display:block}
+.demo-chart i.up{background:var(--bar-over);box-shadow:0 0 10px rgba(141,255,194,.35)}
+.demo-chart i.dn{background:var(--bar-under);box-shadow:0 0 10px rgba(255,109,132,.32)}
+.demo-line{position:absolute;left:2px;right:2px;top:40%;border-top:1.5px dashed rgba(255,255,255,.88)}
+.demo-step{display:grid;grid-template-columns:32px 72px 32px;gap:8px;align-items:center}
+.demo-step span,.demo-step b{height:32px;border:1px solid var(--stroke);background:var(--ctl);box-shadow:var(--bevel);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+.demo-step span{border-radius:50%;font-size:18px}
+.demo-step b{border-radius:12px;font-variant-numeric:tabular-nums;font-size:15px}
+.demo-chips{display:flex;gap:2px;width:100%;padding:3px;border-radius:16px;background:var(--track);border:1px solid var(--line);box-shadow:inset 0 1px 2px rgba(0,0,0,.28)}
+.demo-chips span{position:relative;flex:1 1 0;min-width:0;height:32px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;color:var(--mut);padding:0 2px}
+.demo-chips span.on{background:var(--slab-bg);color:#fff;border:1px solid var(--hair);box-shadow:var(--bevel)}
+.demo-seg{width:100%;pointer-events:none}
+.demo-seg b{position:relative;z-index:1;height:34px;display:flex;align-items:center;justify-content:center;font-weight:650;font-size:13px;color:var(--mut)}
+.demo-seg b:first-of-type{color:#fff}
+.demo-game{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;width:min(220px,100%);padding:12px 14px;border-radius:16px;background:var(--track);border:1px solid var(--hair)}
+.demo-game span{font-weight:700;font-size:15px;text-align:center}
+.demo-game .vs{color:var(--mut);font-size:12px;letter-spacing:.04em}
+.demo-next{font-weight:650;font-size:13px;padding:6px 14px;border-radius:12px;background:var(--track);border:1px solid var(--stroke);box-shadow:var(--bevel)}
+.demo-next .chev{font-weight:700;opacity:.72;margin-left:2px}
+.demo-marks{display:flex;align-items:flex-end;justify-content:center;gap:22px;height:72px}
+.demo-marks > span:not(.demo-col){font-size:28px;line-height:1;align-self:center}
+.demo-col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.demo-hatch{width:22px;height:52px;border-radius:5px 5px 2px 2px;display:block;background:repeating-linear-gradient(-45deg,var(--special) 0 2px,var(--special-bg) 2px 6px);box-shadow:inset 0 0 0 1.5px var(--special)}
+.demo-col small{color:var(--special);font-weight:700;font-size:10px;letter-spacing:.04em}
+.demo-brand{font-size:16px;font-weight:600;letter-spacing:-.02em;padding:6px 12px}
+.demo-brand b{font-weight:700}
+.guide-dots{display:flex;align-items:center;justify-content:center;gap:2px}
+.guide-dot{width:22px;height:22px;padding:0;border:0;border-radius:99px;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.guide-dot::before{content:"";width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.32);transition:width .2s,background .2s}
+.guide-dot.on::before{width:18px;background:#fff}
+.guide-nav{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.guide-nav button{height:46px;border-radius:14px;font:inherit;font-weight:650;font-size:16px;cursor:pointer}
+#guide-skip{background:transparent;color:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.22)}
+#guide-next{background:#fff;color:#000;border:0}
