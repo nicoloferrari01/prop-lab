@@ -194,8 +194,9 @@ function oppBits(g) {
   if (isSpecial(g)) return { text: spName(g), html: esc(spName(g)) };
   const neutral = isNeutral(g);
   const sym = !neutral && g[ix.ha] === "away" ? "@" : "vs";
-  const text = `${sym} ${g[ix.opp]}${neutral ? " N" : ""}`;
-  const html = `${sym} ${esc(g[ix.opp])}${neutral ? ` <small class="neu" title="${esc(tr("neutral"))}">N</small>` : ""}`;
+  const opp = g[ix.opp] ? g[ix.opp] : "–";
+  const text = `${sym} ${opp}${neutral ? " N" : ""}`;
+  const html = `${sym} ${esc(opp)}${neutral ? ` <small class="neu" title="${esc(tr("neutral"))}">N</small>` : ""}`;
   return { text, html };
 }
 function visibleSpecials() {
@@ -359,16 +360,17 @@ function render() {
 }
 
 function drawChart(games, vals) {
-  const el = $("chart"); const W = 1100, H = 340, pl = 40, pr = 16, pt = 24, pb = 54;
+  const el = $("chart"); const H = 340, pl = 40, pr = 16, pt = 24, pb = 54;
   if (!games.length) { el.className = "chart"; el.innerHTML = ""; return; }
+  const n = games.length, slot = 76;
+  const W = pl + pr + n * slot;
   const host = el.clientWidth || 360;
-  const hasSpec = games.some(isSpecial);
-  const disp = hasSpec ? Math.max(host, 1100) : host;
+  const disp = Math.max(host, n * 58);
   const scale = disp / W;
   const poTile = 6.5 / scale, poStroke = 1.7 / scale;
   const asgStripe = 4 / scale;
   const max = Math.max(S.line * 1.25, ...vals, 1), y = v => pt + (H-pt-pb) * (1 - v/max);
-  const n = games.length, bw = (W-pl-pr)/n, gap = Math.min(10, bw*0.25);
+  const bw = slot, gap = Math.min(10, bw * 0.25);
   const step = max > 40 ? 10 : max > 16 ? 5 : max > 8 ? 2 : 1;
   let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="sp-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" style="fill:var(--special-bg)"/><line x1="0" y1="0" x2="0" y2="8" style="stroke:var(--special)" stroke-width="3"/></pattern><pattern id="asg-stripe" width="4" height="${asgStripe * 2}" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="4" height="${asgStripe}" style="fill:var(--asg-red)"/><rect x="0" y="${asgStripe}" width="4" height="${asgStripe}" style="fill:var(--asg-white)"/></pattern><pattern id="po-hatch" width="${poTile}" height="${poTile}" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line x1="0" y1="0" x2="0" y2="${poTile}" style="stroke:var(--playoff)" stroke-width="${poStroke}"/></pattern></defs>`;
   for (let v = 0; v <= max; v += step) s += `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--grid)" stroke-width="1"/><text x="${pl-8}" y="${y(v)+4}" style="fill:var(--mut)" font-size="11" text-anchor="end">${v}</text>`;
@@ -388,11 +390,9 @@ function drawChart(games, vals) {
       if (poff) s += `<rect class="po-hatch" x="${x}" y="${yTop}" width="${w}" height="${h}" rx="${rx}"/>`;
     }
     if (w > 14) s += `<text x="${x+w/2}" y="${y(0)-h-6}" style="fill:var(--text)" font-size="${w>30?13:10}" font-weight="700" text-anchor="middle">${Number.isInteger(v)?v:v.toFixed(1)}</text>`;
-    const nearSpec = games.some((o, j) => j !== i && isSpecial(o) && Math.abs(j - i) <= 1);
-    const showLbl = spec || (!nearSpec && (n <= 25 || i % Math.ceil(n/25) === 0 || i === n-1));
     const xlab = spec ? (bw >= 48 ? spName(g) : spTag(g)) : oppBits(g).text;
-    if (showLbl) s += `<text x="${x+w/2}" y="${H-pb+18}" style="fill:${spec && !asg ? "var(--special)" : "var(--text)"}" font-size="11" font-weight="${spec ? 700 : 400}" text-anchor="middle">${esc(xlab)}</text><text x="${x+w/2}" y="${H-pb+33}" style="fill:var(--mut)" font-size="10" text-anchor="middle">${fmtD(g[ix.date])}</text>`;
-    if (poff && showLbl) s += `<text x="${x+w/2}" y="${H-pb+47}" style="fill:var(--playoff)" font-size="9" font-weight="700" text-anchor="middle">PO</text>`;
+    s += `<text class="xlab" x="${x+w/2}" y="${H-pb+18}" style="fill:${spec && !asg ? "var(--special)" : "var(--text)"}" font-size="11" font-weight="${spec ? 700 : 400}" text-anchor="middle">${esc(xlab)}</text><text class="xdate" x="${x+w/2}" y="${H-pb+33}" style="fill:var(--mut)" font-size="10" text-anchor="middle">${fmtD(g[ix.date])}</text>`;
+    if (poff) s += `<text class="xtag" x="${x+w/2}" y="${H-pb+47}" style="fill:var(--playoff)" font-size="9" font-weight="700" text-anchor="middle">PO</text>`;
     s += `<rect x="${pl+i*bw}" y="${pt}" width="${bw}" height="${H-pt-pb}" fill="transparent"/></g>`;
   });
   s += `<line x1="${pl}" x2="${W-pr}" y1="${y(S.line)}" y2="${y(S.line)}" style="stroke:var(--refline)" stroke-width="2" stroke-dasharray="7 5"/>

@@ -36,6 +36,9 @@ jobs:
       - name: Fetch WNBA and NBA
         run: python fetch_data.py
 
+      - name: Check every game log row
+        run: node scripts/check-gamelogs.js
+
       - name: Commit and push if app/data changed
         id: commit
         run: |
