@@ -251,7 +251,8 @@ footer{color:var(--mut);font-size:11px;text-align:center;padding:22px 16px calc(
   .sel select option{background:#fff;color:#000}
   .mtable input.rl.edited{box-shadow:0 0 0 2px rgba(0,0,0,.12)}
   .avg{box-shadow:inset 0 1px 0 rgba(255,255,255,.9), inset 0 0 0 1px rgba(0,0,0,.06)}
-  .chips,.tabs{box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
+  .chips,.tabs,.seg,.demo-chips{box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
+  .demo-chart i.up,.demo-chart i.dn{box-shadow:none}
   .pinfo img{box-shadow:0 6px 16px rgba(0,0,0,.12), inset 0 0 0 1px rgba(0,0,0,.08)}
   .logo{box-shadow:0 4px 10px rgba(0,0,0,.12)}
 }
@@ -326,7 +327,7 @@ footer{color:var(--mut);font-size:11px;text-align:center;padding:22px 16px calc(
 }
 @media (prefers-reduced-motion: reduce){
   .dot.pending{animation:none}
-  .game,.chips button,.tabs button,.seg-thumb,.guide-track,.guide-dot::before,.top-fade,.top-sm-fade{transition:none}
+  .game,.chips button,.tabs button,.seg-thumb,.guide-track,.guide-dot::before,.top-fade,.top-sm-fade,.help-sheet{transition:none}
   .game:hover{transform:none}
 }
 @media (prefers-reduced-transparency: reduce){
@@ -335,47 +336,40 @@ footer{color:var(--mut);font-size:11px;text-align:center;padding:22px 16px calc(
   .chips button.on::after,.tabs button.on::after,.league-opt.on::after,.seg-thumb::after,.demo-chips span.on::after{opacity:.22;filter:none}
 }
 
-/* Guida al primo avvio: bianco su nero, anche con il tema chiaro. */
+/* Guida: stesso vetro del tema (nero su bianco, o bianco su nero) e glint agli angoli. */
 .guide{
   position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;overflow:auto;
   padding:calc(20px + var(--sat)) calc(16px + var(--sar)) calc(72px + var(--sab)) calc(16px + var(--sal));
-  background:#000;color:#fff;color-scheme:dark;
-  --bg:#000;--text:#fff;--mut:rgba(255,255,255,.72);--faint:rgba(255,255,255,.46);
-  --slab:#141414;--slab-solid:#121212;
-  --slab-bg:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 38%), linear-gradient(180deg, #1c1c1c, #0a0a0a);
-  --stroke:rgba(255,255,255,.16);--line:rgba(255,255,255,.10);--hair:rgba(255,255,255,.22);
-  --sel-text:#fff;--bar-over:#8dffc2;--bar-under:#ff6d84;--ctl:#161616;
-  --bevel:inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(255,255,255,.08);
-  --depth:0 14px 32px rgba(0,0,0,.50), 0 2px 6px rgba(0,0,0,.38);
-  --shadow:var(--bevel), var(--depth);--track:rgba(255,255,255,.06);
-  --special:#c4b5fd;--special-bg:rgba(196,181,253,.22);
-  --playoff:#f0c14e;
-  --asg-blue:#0A3161;--asg-white:#FFFFFF;--asg-red:#B31942;
+  background:var(--bg);color:var(--text);
 }
-body.guide-on{overflow:hidden}
+.guide[hidden]{display:none}
+body.guide-on,body.help-on{overflow:hidden}
+.help-pop{z-index:45}
+.help-sheet{width:min(300px,100%)}
+.help-tutorial{height:46px;margin-top:4px;border:0;border-radius:14px;background:var(--text);color:var(--bg);font:inherit;font-weight:650;font-size:16px;letter-spacing:-.01em;cursor:pointer}
 .guide-box{width:min(100%,400px);margin:auto;display:flex;flex-direction:column;align-items:center;gap:16px}
 .guide-view{width:100%;overflow:hidden;touch-action:none}
 .guide-track{display:flex;width:100%}
 .guide-slide{flex:0 0 100%;width:100%;min-width:0;box-sizing:border-box;padding:10px 6px 28px;display:flex}
 .guide-card{flex:1;min-width:0;border-radius:var(--r-xl);padding:22px 18px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px}
-.guide-card h2{font-size:22px;font-weight:700;letter-spacing:-.03em}
+.guide-card h2{font-size:22px;font-weight:700;letter-spacing:-.03em;color:var(--text)}
 .guide-card p{margin:0;color:var(--mut);font-size:15px;line-height:1.45;text-wrap:balance}
 .demo{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;margin-top:2px}
 .demo-chart{position:relative;width:min(220px,100%);height:96px;display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:0 6px}
 .demo-chart i{width:18px;border-radius:5px 5px 2px 2px;display:block}
 .demo-chart i.up{background:var(--bar-over);box-shadow:0 0 10px rgba(141,255,194,.35)}
 .demo-chart i.dn{background:var(--bar-under);box-shadow:0 0 10px rgba(255,109,132,.32)}
-.demo-line{position:absolute;left:2px;right:2px;top:40%;border-top:1.5px dashed rgba(255,255,255,.88)}
+.demo-line{position:absolute;left:2px;right:2px;top:40%;border-top:1.5px dashed var(--refline)}
 .demo-step{display:grid;grid-template-columns:32px 72px 32px;gap:8px;align-items:center}
-.demo-step span,.demo-step b{height:32px;border:1px solid var(--stroke);background:var(--ctl);box-shadow:var(--bevel);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+.demo-step span,.demo-step b{height:32px;border:1px solid var(--stroke);background:var(--ctl);box-shadow:var(--bevel);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text)}
 .demo-step span{border-radius:50%;font-size:18px}
 .demo-step b{border-radius:12px;font-variant-numeric:tabular-nums;font-size:15px}
 .demo-chips{display:flex;gap:2px;width:100%;padding:3px;border-radius:16px;background:var(--track);border:1px solid var(--line);box-shadow:inset 0 1px 2px rgba(0,0,0,.28)}
 .demo-chips span{position:relative;flex:1 1 0;min-width:0;height:32px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;color:var(--mut);padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.demo-chips span.on{background:var(--slab-bg);color:#fff;border:1px solid var(--hair);box-shadow:var(--bevel)}
+.demo-chips span.on{background:var(--slab-bg);color:var(--sel-text);border:1px solid var(--hair);box-shadow:var(--bevel)}
 .demo-seg{width:100%;pointer-events:none}
 .demo-seg b{position:relative;z-index:1;height:34px;display:flex;align-items:center;justify-content:center;font-weight:650;font-size:13px;color:var(--mut);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
-.demo-seg b:first-of-type{color:#fff}
+.demo-seg b:first-of-type{color:var(--text)}
 .demo-game{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;width:min(220px,100%);padding:12px 14px;border-radius:16px;background:var(--track);border:1px solid var(--hair)}
 .demo-game span{font-weight:700;font-size:15px;text-align:center}
 .demo-game .vs{color:var(--mut);font-size:12px;letter-spacing:.04em}
@@ -385,14 +379,14 @@ body.guide-on{overflow:hidden}
 .demo-marks > span:not(.demo-col){font-size:28px;line-height:1;align-self:center}
 .demo-col{display:flex;flex-direction:column;align-items:center;gap:4px}
 .demo-hatch{width:22px;height:52px;border-radius:5px 5px 2px 2px;display:block;background:linear-gradient(var(--asg-blue),var(--asg-blue)) 0 0 / 40% 53.85% no-repeat,repeating-linear-gradient(to bottom,var(--asg-red) 0 4px,var(--asg-white) 4px 8px)}
-.demo-col small{color:#fff;font-weight:700;font-size:10px;letter-spacing:.04em}
+.demo-col small{color:var(--text);font-weight:700;font-size:10px;letter-spacing:.04em}
 .demo-brand{font-size:16px;font-weight:600;letter-spacing:-.02em;padding:6px 12px}
 .demo-brand b{font-weight:700}
 .guide-dots{display:flex;align-items:center;justify-content:center;gap:2px}
 .guide-dot{width:22px;height:22px;padding:0;border:0;border-radius:99px;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.guide-dot::before{content:"";width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.32);transition:width .2s,background .2s}
-.guide-dot.on::before{width:18px;background:#fff}
+.guide-dot::before{content:"";width:7px;height:7px;border-radius:99px;background:var(--faint);transition:width .2s,background .2s}
+.guide-dot.on::before{width:18px;background:var(--text)}
 .guide-nav{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .guide-nav button{height:46px;border-radius:14px;font:inherit;font-weight:650;font-size:16px;cursor:pointer}
-#guide-skip{background:transparent;color:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.22)}
-#guide-next{background:#fff;color:#000;border:0}
+#guide-skip{background:transparent;color:var(--text);border:1px solid var(--stroke)}
+#guide-next{background:var(--text);color:var(--bg);border:0}

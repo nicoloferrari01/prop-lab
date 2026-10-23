@@ -60,7 +60,7 @@ window.I18n = (() => {
       median_note: "linea = mediana arrotondata a .5 (modificabile)", fixed_at: "linea fissa {n}",
       fresh: "Dati {season} fino al {date} · {games} partite{hist}", fresh_hist: " · storico {label}",
       aria_help: "Guida", aria_search: "Cerca", aria_dec: "Diminuisci", aria_inc: "Aumenta", aria_venue: "Casa o trasferta", aria_guide: "Schede della guida",
-      guide_skip: "Salta", guide_next: "Avanti", guide_start: "Inizia",
+      guide_skip: "Salta", guide_next: "Avanti", guide_start: "Inizia", tutorial: "Tutorial",
       guide_t0: "Le colonne", guide_p0: "Ogni colonna è una partita: verde sopra la linea, rosso sotto. La linea si regola con +/−; tocca una colonna per i dettagli.",
       guide_t1: "Le percentuali", guide_p1: "Stagione conta solo la stagione in corso; Ultime 5, 10 e 20 includono anche le passate. Il cursore Tutte, Casa o Trasferta filtra le statistiche e parte da Tutte.",
       guide_t2: "Partite e giocatori", guide_p2: "L'app si apre su Partite: tocca una partita per vedere i giocatori. «Prossima partita contro X» sotto un giocatore apre quella partita, e indietro torna lì.",
@@ -135,7 +135,7 @@ window.I18n = (() => {
       median_note: "line = median rounded to .5 (editable)", fixed_at: "fixed line {n}",
       fresh: "{season} data through {date} · {games} games{hist}", fresh_hist: " · history {label}",
       aria_help: "Guide", aria_search: "Search", aria_dec: "Decrease", aria_inc: "Increase", aria_venue: "Home or away", aria_guide: "Guide cards",
-      guide_skip: "Skip", guide_next: "Next", guide_start: "Start",
+      guide_skip: "Skip", guide_next: "Next", guide_start: "Start", tutorial: "Tutorial",
       guide_t0: "The bars", guide_p0: "Each bar is a game: green is over the line, red is under. Adjust the line with +/− and tap a bar for details.",
       guide_t1: "The percentages", guide_p1: "Season counts only the current season; Last 5, 10 and 20 also include previous seasons. The All, Home or Away slider filters the stats and starts on All.",
       guide_t2: "Games and players", guide_p2: "The app opens on Games: tap a game to see the players. “Next game vs X” under a player opens that game, and back returns there.",
@@ -210,7 +210,7 @@ window.I18n = (() => {
       median_note: "línea = mediana redondeada a .5 (editable)", fixed_at: "línea fija {n}",
       fresh: "Datos {season} hasta el {date} · {games} partidos{hist}", fresh_hist: " · historial {label}",
       aria_help: "Guía", aria_search: "Buscar", aria_dec: "Bajar", aria_inc: "Subir", aria_venue: "Local o visitante", aria_guide: "Fichas de la guía",
-      guide_skip: "Saltar", guide_next: "Siguiente", guide_start: "Empezar",
+      guide_skip: "Saltar", guide_next: "Siguiente", guide_start: "Empezar", tutorial: "Tutorial",
       guide_t0: "Las barras", guide_p0: "Cada barra es un partido: verde por encima de la línea, rojo por debajo. La línea se ajusta con +/−; toca una barra para ver el detalle.",
       guide_t1: "Los porcentajes", guide_p1: "Temporada cuenta solo la temporada en curso; Últimos 5, 10 y 20 incluyen también las anteriores. El control Todos, Local o Visitante filtra las estadísticas y empieza en Todos.",
       guide_t2: "Partidos y jugadores", guide_p2: "La app se abre en Partidos: toca un partido para ver a los jugadores. «Próximo partido contra X» bajo un jugador abre ese partido, y atrás vuelve allí.",
@@ -285,7 +285,7 @@ window.I18n = (() => {
       median_note: "ligne = médiane arrondie à ,5 (modifiable)", fixed_at: "ligne fixe {n}",
       fresh: "Données {season} jusqu'au {date} · {games} matchs{hist}", fresh_hist: " · historique {label}",
       aria_help: "Guide", aria_search: "Chercher", aria_dec: "Diminuer", aria_inc: "Augmenter", aria_venue: "Domicile ou extérieur", aria_guide: "Fiches du guide",
-      guide_skip: "Passer", guide_next: "Suivant", guide_start: "Commencer",
+      guide_skip: "Passer", guide_next: "Suivant", guide_start: "Commencer", tutorial: "Tutoriel",
       guide_t0: "Les barres", guide_p0: "Chaque barre est un match : vert au-dessus de la ligne, rouge en dessous. La ligne se règle avec +/− ; touchez une barre pour le détail.",
       guide_t1: "Les pourcentages", guide_p1: "Saison ne compte que la saison en cours ; 5, 10 et 20 derniers incluent aussi les saisons passées. Le curseur Tous, Domicile ou Extérieur filtre les stats et démarre sur Tous.",
       guide_t2: "Matchs et joueurs", guide_p2: "L'app s'ouvre sur Matchs : touchez un match pour voir les joueurs. « Prochain match contre X » sous un joueur ouvre ce match, et retour y ramène.",
@@ -329,7 +329,7 @@ window.I18n = (() => {
     return t(key, vars);
   }
   function markLang() {
-    document.querySelectorAll("#lang-picks [data-lang]").forEach(b => {
+    document.querySelectorAll(".lang-picks [data-lang]").forEach(b => {
       const on = b.dataset.lang === lang;
       b.classList.toggle("on", on);
       b.setAttribute("aria-pressed", on ? "true" : "false");

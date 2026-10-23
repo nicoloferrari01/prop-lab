@@ -17,7 +17,7 @@
 <div class="top-slot" id="top-slot">
   <div class="top-fade" id="top-fade">
     <header class="top" id="top">
-      <div class="brand"><img class="logo" src="icon.svg" alt="" width="28" height="28"><span class="dot pending status-dot" id="status-dot" data-i18n="checking" data-i18n-attr="title" title="Controllo nuove partite…"></span><button type="button" class="brand-btn league-btn" id="league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span class="league-label" id="league-label">NBA</span> <b>Prop Lab</b></button><button type="button" class="help" id="help" data-i18n="aria_help" data-i18n-attr="aria-label" aria-label="Guida" aria-haspopup="dialog" aria-controls="guide">i</button></div>
+      <div class="brand"><img class="logo" src="icon.svg" alt="" width="28" height="28"><span class="dot pending status-dot" id="status-dot" data-i18n="checking" data-i18n-attr="title" title="Controllo nuove partite…"></span><button type="button" class="brand-btn league-btn" id="league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span class="league-label" id="league-label">NBA</span> <b>Prop Lab</b></button><button type="button" class="help" id="help" data-i18n="aria_help" data-i18n-attr="aria-label" aria-label="Guida" aria-haspopup="dialog" aria-controls="help-pop" aria-expanded="false">i</button></div>
       <nav class="tabs" id="tabs">
         <button data-v="player"><span class="tab-l" data-i18n="tab_player_f">Giocatrice</span><span class="tab-s" data-i18n="tab_player_s">Gioc.</span></button>
         <button data-v="markets"><span class="tab-l" data-i18n="tab_board">Listone</span><span class="tab-s" data-i18n="tab_board_s">Listone</span></button>
@@ -32,7 +32,7 @@
 </div>
 <div class="top-sm-fade" id="top-sm-fade" aria-hidden="true" inert>
   <header class="top top-sm" id="top-sm">
-    <div class="brand"><img class="logo" src="icon.svg" alt="" width="22" height="22"><span class="dot pending status-dot" data-i18n="checking" data-i18n-attr="title" title="Controllo nuove partite…"></span><button type="button" class="brand-btn league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span class="league-label">NBA</span> <b>Prop Lab</b></button><button type="button" class="help" data-i18n="aria_help" data-i18n-attr="aria-label" aria-label="Guida" aria-haspopup="dialog" aria-controls="guide">i</button></div>
+    <div class="brand"><img class="logo" src="icon.svg" alt="" width="22" height="22"><span class="dot pending status-dot" data-i18n="checking" data-i18n-attr="title" title="Controllo nuove partite…"></span><button type="button" class="brand-btn league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span class="league-label">NBA</span> <b>Prop Lab</b></button><button type="button" class="help" data-i18n="aria_help" data-i18n-attr="aria-label" aria-label="Guida" aria-haspopup="dialog" aria-controls="help-pop" aria-expanded="false">i</button></div>
     <nav class="tabs">
       <button data-v="player"><span class="tab-l" data-i18n="tab_player_f">Giocatrice</span><span class="tab-s" data-i18n="tab_player_s">Gioc.</span></button>
       <button data-v="markets"><span class="tab-l" data-i18n="tab_board">Listone</span><span class="tab-s" data-i18n="tab_board_s">Listone</span></button>
@@ -230,6 +230,18 @@
       <button type="button" id="guide-skip" data-i18n="guide_skip">Salta</button>
       <button type="button" id="guide-next" data-i18n="guide_next">Avanti</button>
     </div>
+  </div>
+</div>
+<div id="help-pop" class="league-pop help-pop" hidden>
+  <div class="league-sheet card help-sheet" role="dialog" aria-modal="true" aria-labelledby="help-h">
+    <div class="lang-h" id="help-h" data-i18n="language">Lingua</div>
+    <div class="lang-picks" role="group" data-i18n="language" data-i18n-attr="aria-label">
+      <button type="button" data-lang="it" aria-pressed="false">Italiano</button>
+      <button type="button" data-lang="en" aria-pressed="false">English</button>
+      <button type="button" data-lang="es" aria-pressed="false">Español</button>
+      <button type="button" data-lang="fr" aria-pressed="false">Français</button>
+    </div>
+    <button type="button" class="help-tutorial" id="help-tutorial" data-i18n="tutorial">Tutorial</button>
   </div>
 </div>
 <div id="league-pop" class="league-pop" hidden>

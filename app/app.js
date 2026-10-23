@@ -1044,7 +1044,7 @@ window.addEventListener("scroll", () => {
 window.addEventListener("scrollend", () => {
   if (window.scrollY <= expandY) setSlim(false);
 }, { passive: true });
-window.addEventListener("popstate", () => { if (history.state && history.state.view) applyState(history.state); });
+window.addEventListener("popstate", () => onPopState());
 
 function foot() {
   const iso = String(D.generated || "");
@@ -1076,7 +1076,57 @@ function openLeague(data, league) {
   guideMaybe();
 }
 const GUIDE_KEY = "prop-lab-guide";
-let gi = 0, gDrag = null;
+let gi = 0, gDrag = null, helpArmed = false, helpClosing = false;
+function helpHide() {
+  const pop = $("help-pop");
+  if (pop) {
+    pop.hidden = true;
+    const sheet = pop.querySelector(".help-sheet");
+    if (sheet) sheet.style.transform = "";
+  }
+  document.body.classList.remove("help-on");
+  document.querySelectorAll(".help").forEach(b => b.setAttribute("aria-expanded", "false"));
+}
+function helpShow() {
+  const pop = $("help-pop");
+  if (!pop || !pop.hidden) return;
+  pop.hidden = false;
+  document.body.classList.add("help-on");
+  document.querySelectorAll(".help").forEach(b => b.setAttribute("aria-expanded", "true"));
+  const tut = $("help-tutorial");
+  if (tut) tut.focus({ preventScroll: true });
+}
+function helpOpen() {
+  helpShow();
+  if (helpArmed || (history.state && history.state.help)) { helpArmed = true; return; }
+  const base = history.state && typeof history.state === "object" ? Object.assign({}, history.state) : {};
+  history.pushState(Object.assign({}, base, { help: 1 }), "", location.href);
+  helpArmed = true;
+}
+function helpClose() {
+  if (helpClosing) return;
+  const pop = $("help-pop");
+  if ((!pop || pop.hidden) && !helpArmed) return;
+  const armed = helpArmed && !!(history.state && history.state.help);
+  helpHide();
+  if (armed) { helpClosing = true; history.back(); }
+  else helpArmed = false;
+}
+function onPopState() {
+  helpClosing = false;
+  const st = history.state;
+  if (helpArmed) {
+    helpArmed = false;
+    if (!st || !st.help) { helpHide(); return; }
+  }
+  const guide = $("guide");
+  if (st && st.help && (!guide || guide.hidden)) {
+    helpArmed = true;
+    helpShow();
+    return;
+  }
+  if (st && st.view) applyState(st);
+}
 function guideSeen() {
   try { return localStorage.getItem(GUIDE_KEY) === "1"; } catch (e) { return false; }
 }
@@ -1140,7 +1190,41 @@ function initGuide() {
     else guideAt(gi + 1);
   });
   document.querySelectorAll("#guide-dots .guide-dot").forEach((d, i) => d.addEventListener("click", () => guideAt(i)));
-  document.querySelectorAll(".help").forEach(help => help.addEventListener("click", e => { e.stopPropagation(); guideOpen(); }));
+  document.querySelectorAll(".help").forEach(help => help.addEventListener("click", e => { e.stopPropagation(); helpOpen(); }));
+  const helpPop = $("help-pop");
+  const helpSheet = helpPop && helpPop.querySelector(".help-sheet");
+  if (helpPop) {
+    helpPop.addEventListener("click", e => {
+      if (e.target === helpPop) { helpClose(); return; }
+      const langBtn = e.target.closest("[data-lang]");
+      if (langBtn) { I18n.set(langBtn.dataset.lang); return; }
+      if (e.target.closest("#help-tutorial")) { helpClose(); guideOpen(); }
+    });
+  }
+  if (helpSheet) {
+    let swipe = null;
+    helpSheet.addEventListener("pointerdown", e => {
+      if (e.button !== 0) return;
+      swipe = { id: e.pointerId, y: e.clientY, dy: 0 };
+      helpSheet.style.transition = "none";
+    });
+    helpSheet.addEventListener("pointermove", e => {
+      if (!swipe || e.pointerId !== swipe.id) return;
+      const dy = e.clientY - swipe.y;
+      swipe.dy = dy;
+      if (dy > 0) helpSheet.style.transform = `translate3d(0,${Math.min(dy, 180)}px,0)`;
+    });
+    const endSwipe = e => {
+      if (!swipe || e.pointerId !== swipe.id) return;
+      const dy = swipe.dy;
+      swipe = null;
+      helpSheet.style.transition = "";
+      helpSheet.style.transform = "";
+      if (dy > 56) helpClose();
+    };
+    helpSheet.addEventListener("pointerup", endSwipe);
+    helpSheet.addEventListener("pointercancel", endSwipe);
+  }
   view.addEventListener("pointerdown", e => {
     if (e.button !== 0) return;
     gDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, lock: false };
@@ -1174,10 +1258,13 @@ function initGuide() {
   view.addEventListener("pointerup", endDrag);
   view.addEventListener("pointercancel", endDrag);
   document.addEventListener("keydown", e => {
-    if (root.hidden) return;
-    if (e.key === "Escape") { e.preventDefault(); guideClose(); }
-    else if (e.key === "ArrowRight") { e.preventDefault(); guideAt(gi + 1); }
-    else if (e.key === "ArrowLeft") { e.preventDefault(); guideAt(gi - 1); }
+    if (!root.hidden) {
+      if (e.key === "Escape") { e.preventDefault(); guideClose(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); guideAt(gi + 1); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); guideAt(gi - 1); }
+      return;
+    }
+    if (e.key === "Escape" && helpPop && !helpPop.hidden) { e.preventDefault(); helpClose(); }
   });
   window.addEventListener("resize", () => { if (!root.hidden) guideAt(gi, false); });
 }
