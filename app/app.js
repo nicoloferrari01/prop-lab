@@ -435,7 +435,9 @@ function computeRows() {
     if (M.team !== "all" && p.team !== M.team) continue;
     const base = p.g.filter(g => g[ix.st] !== 9 && (M.venue==="all"||g[ix.ha]===M.venue) && (M.phase==="all"||String(g[ix.st])===M.phase));
     if (!base.length) continue;
-    const per = M.period === "all" ? base : base.slice(-(+M.period));
+    const season = base.filter(inCurrentSeason);
+    const per = M.period === "all" ? season : base.slice(-(+M.period));
+    if (!per.length) continue;
     const mins = per.reduce((s, g) => s + g[ix.min], 0) / per.length;
     if (base.length < M.minG || mins < M.minMin) continue;
     const vals = per.map(f), avg = vals.reduce((a, b) => a + b, 0) / vals.length, med = median(vals);
@@ -444,7 +446,7 @@ function computeRows() {
     const vsG = M.opp === "all" ? [] : base.filter(g => g[ix.opp] === M.opp);
     rows.push({ p, gp: per.length, mins, avg, med, line, edited: M.lineMode !== "fixed" && M.lines[p.id] !== undefined,
       h5: hr(base.slice(-5), f, line), h10: hr(base.slice(-10), f, line), h20: hr(base.slice(-20), f, line),
-      hs: hr(base, f, line), hv: hr(vsG, f, line), last10: base.slice(-10).map(f) });
+      hs: hr(season, f, line), hv: hr(vsG, f, line), last10: base.slice(-10).map(f) });
   }
   return rows;
 }
@@ -632,7 +634,8 @@ function muRows(team, opp, side) {
     if (mins < MU.minMin) continue;
     const vals = all.map(f), avg = vals.reduce((a, b) => a + b, 0) / vals.length, line = Math.floor(median(vals)) + 0.5;
     const base = MU.venue === "side" ? all.filter(g => g[ix.ha] === side) : all;
-    rows.push({ p, mins, avg, line, gp: all.length, h10: hr(base.slice(-10), f, line), hs: hr(base, f, line),
+    const season = base.filter(inCurrentSeason);
+    rows.push({ p, mins, avg, line, gp: all.length, h10: hr(base.slice(-10), f, line), hs: hr(season, f, line),
       hv: hr(base.filter(g => g[ix.opp] === opp), f, line), last10: base.slice(-10).map(f) });
   }
   return rows.sort((a, b) => b.mins - a.mins);
