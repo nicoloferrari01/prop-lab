@@ -356,17 +356,24 @@ function render() {
 function drawChart(games, vals) {
   const el = $("chart"); const W = 1100, H = 340, pl = 40, pr = 16, pt = 24, pb = 54;
   if (!games.length) { el.className = "chart"; el.innerHTML = ""; return; }
+  const host = el.clientWidth || 360;
+  const hasSpec = games.some(isSpecial);
+  const disp = hasSpec ? Math.max(host, 1100) : host;
+  const scale = disp / W;
+  const poTile = 6.5 / scale, poStroke = 1.7 / scale;
   const max = Math.max(S.line * 1.25, ...vals, 1), y = v => pt + (H-pt-pb) * (1 - v/max);
   const n = games.length, bw = (W-pl-pr)/n, gap = Math.min(10, bw*0.25);
   const step = max > 40 ? 10 : max > 16 ? 5 : max > 8 ? 2 : 1;
-  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="sp-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" style="fill:var(--special-bg)"/><line x1="0" y1="0" x2="0" y2="8" style="stroke:var(--special)" stroke-width="3"/></pattern></defs>`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="sp-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" style="fill:var(--special-bg)"/><line x1="0" y1="0" x2="0" y2="8" style="stroke:var(--special)" stroke-width="3"/></pattern><pattern id="po-hatch" width="${poTile}" height="${poTile}" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line x1="0" y1="0" x2="0" y2="${poTile}" style="stroke:var(--playoff)" stroke-width="${poStroke}"/></pattern></defs>`;
   for (let v = 0; v <= max; v += step) s += `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--grid)" stroke-width="1"/><text x="${pl-8}" y="${y(v)+4}" style="fill:var(--mut)" font-size="11" text-anchor="end">${v}</text>`;
   games.forEach((g, i) => {
     const v = vals[i], x = pl + i*bw + gap/2, w = bw - gap, spec = isSpecial(g), poff = !spec && isPlayoff(g);
     const tone = spec ? "special" : v > S.line ? "over" : v < S.line ? "under" : "push";
     const c = poff ? tone + " playoff" : tone;
     const h = Math.max(2, y(0) - y(v));
-    s += `<g class="b" data-i="${i}"><rect class="bar ${c}" x="${x}" y="${y(0)-h}" width="${w}" height="${h}" rx="${Math.min(6,w/3)}"/>`;
+    const rx = Math.min(6, w / 3);
+    s += `<g class="b" data-i="${i}"><rect class="bar ${c}" x="${x}" y="${y(0)-h}" width="${w}" height="${h}" rx="${rx}"/>`;
+    if (poff) s += `<rect class="po-hatch" x="${x}" y="${y(0)-h}" width="${w}" height="${h}" rx="${rx}"/>`;
     if (w > 14) s += `<text x="${x+w/2}" y="${y(0)-h-6}" style="fill:var(--text)" font-size="${w>30?13:10}" font-weight="700" text-anchor="middle">${Number.isInteger(v)?v:v.toFixed(1)}</text>`;
     const nearSpec = games.some((o, j) => j !== i && isSpecial(o) && Math.abs(j - i) <= 1);
     const showLbl = spec || (!nearSpec && (n <= 25 || i % Math.ceil(n/25) === 0 || i === n-1));
@@ -377,9 +384,7 @@ function drawChart(games, vals) {
   });
   s += `<line x1="${pl}" x2="${W-pr}" y1="${y(S.line)}" y2="${y(S.line)}" style="stroke:var(--refline)" stroke-width="2" stroke-dasharray="7 5"/>
         <text x="${W-pr}" y="${y(S.line)-6}" style="fill:var(--refline)" font-size="12" font-weight="700" text-anchor="end">${S.line}</text></svg><div class="tip" id="tip"></div>`;
-  const host = el.clientWidth || 360;
-  const hasSpec = games.some(isSpecial);
-  const inner = hasSpec ? Math.max(host, 1100) : host;
+  const inner = disp;
   const scroll = inner > host + 8;
   el.className = "chart" + (scroll ? " wide" : "");
   el.innerHTML = `<div class="chart-in"${scroll ? ` style="width:${Math.ceil(inner)}px"` : ""}>${s}</div>`;

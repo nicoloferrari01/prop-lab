@@ -192,7 +192,7 @@ h1{margin:0;font-size:28px;font-weight:700;letter-spacing:-.03em;line-height:1.1
 svg .bar.over{fill:var(--bar-over);stroke:none}
 svg .bar.under{fill:var(--bar-under);stroke:none}
 svg .bar.push{fill:var(--bar-push);stroke:none}
-svg .bar.playoff{stroke:var(--playoff);stroke-width:2px;vector-effect:non-scaling-stroke}
+svg .po-hatch{fill:url(#po-hatch);stroke:none;pointer-events:none}
 svg .bar.special{fill:url(#sp-hatch);stroke:var(--special);stroke-width:2.5}
 .sw.special{width:12px;height:10px;border-radius:3px;background:repeating-linear-gradient(-45deg,var(--special) 0 1.5px,var(--special-bg) 1.5px 4.5px);box-shadow:inset 0 0 0 1px var(--special)}
 .mark-legend{font-size:11px;letter-spacing:.01em}
