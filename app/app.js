@@ -142,6 +142,11 @@ function chips(el, opts, key, after) {
   mountStrip(el);
 }
 function isSpecial(g) { return g[ix.st] === 9; }
+function isAllStar(g) {
+  if (!isSpecial(g)) return false;
+  const lab = ix.sp >= 0 && g.length > ix.sp && g[ix.sp] ? String(g[ix.sp]) : "";
+  return /all[-\s]?star/i.test(lab);
+}
 function isPlayoff(g) { const st = g[ix.st]; return st === 3 || st === 5; }
 function inPhase(g, phase) {
   if (!phase || phase === "all") return true;
@@ -361,14 +366,15 @@ function drawChart(games, vals) {
   const disp = hasSpec ? Math.max(host, 1100) : host;
   const scale = disp / W;
   const poTile = 6.5 / scale, poStroke = 1.7 / scale;
+  const asgBand = 4.5 / scale, asgTile = asgBand * 3;
   const max = Math.max(S.line * 1.25, ...vals, 1), y = v => pt + (H-pt-pb) * (1 - v/max);
   const n = games.length, bw = (W-pl-pr)/n, gap = Math.min(10, bw*0.25);
   const step = max > 40 ? 10 : max > 16 ? 5 : max > 8 ? 2 : 1;
-  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="sp-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" style="fill:var(--special-bg)"/><line x1="0" y1="0" x2="0" y2="8" style="stroke:var(--special)" stroke-width="3"/></pattern><pattern id="po-hatch" width="${poTile}" height="${poTile}" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line x1="0" y1="0" x2="0" y2="${poTile}" style="stroke:var(--playoff)" stroke-width="${poStroke}"/></pattern></defs>`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="sp-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" style="fill:var(--special-bg)"/><line x1="0" y1="0" x2="0" y2="8" style="stroke:var(--special)" stroke-width="3"/></pattern><pattern id="asg-stripe" width="${asgTile}" height="8" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="${asgBand}" height="8" style="fill:var(--asg-blue)"/><rect x="${asgBand}" y="0" width="${asgBand}" height="8" style="fill:var(--asg-white)"/><rect x="${asgBand * 2}" y="0" width="${asgBand}" height="8" style="fill:var(--asg-red)"/></pattern><pattern id="po-hatch" width="${poTile}" height="${poTile}" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line x1="0" y1="0" x2="0" y2="${poTile}" style="stroke:var(--playoff)" stroke-width="${poStroke}"/></pattern></defs>`;
   for (let v = 0; v <= max; v += step) s += `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--grid)" stroke-width="1"/><text x="${pl-8}" y="${y(v)+4}" style="fill:var(--mut)" font-size="11" text-anchor="end">${v}</text>`;
   games.forEach((g, i) => {
-    const v = vals[i], x = pl + i*bw + gap/2, w = bw - gap, spec = isSpecial(g), poff = !spec && isPlayoff(g);
-    const tone = spec ? "special" : v > S.line ? "over" : v < S.line ? "under" : "push";
+    const v = vals[i], x = pl + i*bw + gap/2, w = bw - gap, spec = isSpecial(g), asg = spec && isAllStar(g), poff = !spec && isPlayoff(g);
+    const tone = asg ? "allstar" : spec ? "special" : v > S.line ? "over" : v < S.line ? "under" : "push";
     const c = poff ? tone + " playoff" : tone;
     const h = Math.max(2, y(0) - y(v));
     const rx = Math.min(6, w / 3);
@@ -378,7 +384,7 @@ function drawChart(games, vals) {
     const nearSpec = games.some((o, j) => j !== i && isSpecial(o) && Math.abs(j - i) <= 1);
     const showLbl = spec || (!nearSpec && (n <= 25 || i % Math.ceil(n/25) === 0 || i === n-1));
     const xlab = spec ? (bw >= 48 ? spName(g) : spTag(g)) : oppBits(g).text;
-    if (showLbl) s += `<text x="${x+w/2}" y="${H-pb+18}" style="fill:${spec ? "var(--special)" : "var(--text)"}" font-size="11" font-weight="${spec ? 700 : 400}" text-anchor="middle">${esc(xlab)}</text><text x="${x+w/2}" y="${H-pb+33}" style="fill:var(--mut)" font-size="10" text-anchor="middle">${fmtD(g[ix.date])}</text>`;
+    if (showLbl) s += `<text x="${x+w/2}" y="${H-pb+18}" style="fill:${asg ? "var(--asg-blue)" : spec ? "var(--special)" : "var(--text)"}" font-size="11" font-weight="${spec ? 700 : 400}" text-anchor="middle">${esc(xlab)}</text><text x="${x+w/2}" y="${H-pb+33}" style="fill:var(--mut)" font-size="10" text-anchor="middle">${fmtD(g[ix.date])}</text>`;
     if (poff && showLbl) s += `<text x="${x+w/2}" y="${H-pb+47}" style="fill:var(--playoff)" font-size="9" font-weight="700" text-anchor="middle">PO</text>`;
     s += `<rect x="${pl+i*bw}" y="${pt}" width="${bw}" height="${H-pt-pb}" fill="transparent"/></g>`;
   });
@@ -448,7 +454,9 @@ function drawLog(games) {
     if (prev && name && name !== prev) body += `<tr class="season-sep"><td colspan="${head.length}">${esc(name)}</td></tr>`;
     prev = name || prev;
     const v = f(g), spec = isSpecial(g);
-    const tag = spec ? ` <small class="asg">${spTag(g)}</small>` : (isPlayoff(g) ? ` <small class="po">PO</small>` : "");
+    const tag = !spec ? (isPlayoff(g) ? ` <small class="po">PO</small>` : "")
+      : isAllStar(g) ? ` <small class="asg flag">${[...spTag(g)].map((ch, i) => `<i class="c${i}">${esc(ch)}</i>`).join("")}</small>`
+      : ` <small class="asg">${spTag(g)}</small>`;
     const opp = oppBits(g).html;
     body += `<tr class="${spec?"special":""}"><td>${fmtD(g[ix.date])}${tag}</td><td>${opp}</td><td>${g[ix.w]?tr("w_short"):tr("l_short")} ${g[ix.ts]}-${g[ix.os]}</td>
     <td>${g[ix.min]}</td><td>${g[ix.pts]}</td><td>${g[ix.reb]}</td><td>${g[ix.ast]}</td><td>${g[ix.fg3]}/${g[ix.fg3a]}</td><td>${g[ix.stl]}</td><td>${g[ix.blk]}</td><td>${g[ix.tov]}</td><td>${g[ix.fgm]}/${g[ix.fga]}</td>
