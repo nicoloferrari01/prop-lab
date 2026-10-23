@@ -2,9 +2,29 @@
 window.Update = (() => {
   const CACHE_MIN = 10, TIMEOUT = 8000, CONC = 6;
   const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined; } catch (e) { return undefined; } })();
-  const hhmm = d => d.toLocaleTimeString("it-IT", Object.assign({ hour: "2-digit", minute: "2-digit" }, TZ ? { timeZone: TZ } : {}));
   const etDate = iso => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date(iso));
-  const plural = n => n === 1 ? "1 nuova partita" : `${n} nuove partite`;
+  let shown = null;
+  function clockAt(d) {
+    const when = d instanceof Date ? d : new Date(d);
+    const tz = TZ ? { timeZone: TZ } : {};
+    const time = when.toLocaleTimeString(I18n.locale, Object.assign({ hour: "2-digit", minute: "2-digit" }, tz));
+    let z = "";
+    try {
+      const parts = new Intl.DateTimeFormat(I18n.locale, Object.assign({ timeZoneName: "short" }, tz)).formatToParts(when);
+      z = (parts.find(p => p.type === "timeZoneName") || {}).value || "";
+    } catch (e) {}
+    return z ? `${time} ${z}` : time;
+  }
+  function statusMessage() {
+    if (!shown) return "";
+    const time = clockAt(shown.when || Date.now());
+    if (shown.kind === "cache-offline") return I18n.t("offline_cached", { time });
+    if (shown.kind === "bundled") return I18n.t("offline_bundled", { date: I18n.fmtDate(shown.date, true) });
+    const n = shown.games || 0;
+    if (n === 1) return I18n.t("updated_one", { time });
+    if (n > 1) return I18n.t("updated_many", { time, n });
+    return I18n.t("updated_none", { time });
+  }
   async function getJSON(url) {
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), TIMEOUT);
     try { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error("HTTP " + r.status); return await r.json(); }
@@ -110,16 +130,16 @@ window.Update = (() => {
       }));
       return { ts: Date.now(), base: baseId, games: events.length, rows };
     }
-    function apply(upd, text, tone) {
+    function apply(upd, kind, tone, extra) {
       if (my !== token) return;
-      if (upd.games) window.App.setData(merge(upd, window.App.data()));
-      window.App.setStatus(text, tone);
+      shown = Object.assign({ kind, tone }, extra);
+      if (upd && upd.games) window.App.setData(merge(upd, window.App.data()));
+      window.App.setStatus(statusMessage(), tone);
     }
     let cache = null; try { cache = JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e) {}
     if (cache && cache.base !== baseId) cache = null;
     const fresh = cache && Date.now() - cache.ts < CACHE_MIN * 60000;
-    const msg = (u, when) => u.games ? `Aggiornato alle ${hhmm(when)}, ${plural(u.games)}` : `Aggiornato alle ${hhmm(when)} · Nessuna nuova partita`;
-    if (fresh) { apply(cache, msg(cache, new Date(cache.ts)), cache.games ? "ok" : "idle"); return; }
+    if (fresh) { apply(cache, "live", cache.games ? "ok" : "idle", { when: cache.ts, games: cache.games }); return; }
     async function viaServer() {
       if (location.protocol === "file:") throw new Error("nessun server locale");
       const u = await getJSON(`api/update?league=${cfg.id}&since=${bundled.last}&season=${bundled.season}`);
@@ -131,13 +151,14 @@ window.Update = (() => {
       try { upd = await fetchNew(); } catch (e) { console.warn("ESPN diretto non riuscito, provo server locale:", e); upd = await viaServer(); }
       if (my !== token) return;
       try { localStorage.setItem(CACHE_KEY, JSON.stringify(upd)); } catch (e) {}
-      apply(upd, msg(upd, new Date(upd.ts)), upd.games ? "ok" : "idle");
+      apply(upd, "live", upd.games ? "ok" : "idle", { when: upd.ts, games: upd.games });
     } catch (err) {
       if (my !== token) return;
       console.warn("Aggiornamento non riuscito:", err);
-      if (cache) apply(cache, `Offline: uso aggiornamento delle ${hhmm(new Date(cache.ts))}`, "warn");
-      else window.App.setStatus(`Offline: dati inclusi fino al ${bundled.last.split("-").reverse().join("/")}`, "warn");
+      if (cache) apply(cache, "cache-offline", "warn", { when: cache.ts, games: cache.games });
+      else apply(null, "bundled", "warn", { date: bundled.last });
     }
   }
+  if (window.I18n) I18n.on(() => { if (shown && window.App) App.setStatus(statusMessage(), shown.tone); });
   return { start };
 })();

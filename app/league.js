@@ -3,17 +3,13 @@ window.LEAGUES = {
   wnba: {
     id: "wnba", label: "WNBA", espn: "basketball/wnba", shot: "wnba",
     dataGlobal: "WNBA_DATA", injGlobal: "WNBA_INJURIES",
-    noun: "giocatrici", one: "Giocatrice", none: "Nessuna giocatrice nei dati con questi filtri",
-    ph: "Cerca giocatrice o squadra…", line: "Linea per giocatrice (mediana)",
-    pause: "La WNBA è in pausa: la nuova stagione di solito parte a maggio. Intanto ecco gli ultimi risultati.",
+    fem: true,
     stars: ["A'ja Wilson"]
   },
   nba: {
     id: "nba", label: "NBA", espn: "basketball/nba", shot: "nba",
     dataGlobal: "NBA_DATA", injGlobal: "NBA_INJURIES",
-    noun: "giocatori", one: "Giocatore", none: "Nessun giocatore nei dati con questi filtri",
-    ph: "Cerca giocatore o squadra…", line: "Linea per giocatore (mediana)",
-    pause: "La NBA è in pausa: la nuova stagione di solito parte a ottobre. Intanto ecco gli ultimi risultati.",
+    fem: false,
     stars: ["Jokić", "Gilgeous-Alexander"]
   }
 };
@@ -124,7 +120,7 @@ async function choose(id) {
   const my = ++req;
   const cfg = window.LEAGUES[id];
   document.getElementById("league-label").textContent = cfg.label;
-  if (id !== "wnba") App.setStatus("Carico i dati " + cfg.label + "…", "pending");
+  if (id !== "wnba") App.setStatus(I18n.t("loading_league", { league: cfg.label }), "pending");
   try {
     const data = await loadLeague(id);
     if (my !== req) return;
@@ -133,7 +129,7 @@ async function choose(id) {
   } catch (err) {
     if (my !== req) return;
     console.warn(err);
-    App.setStatus("Dati " + cfg.label + " non disponibili", "warn");
+    App.setStatus(I18n.t("league_unavailable", { league: cfg.label }), "warn");
   }
 }
 
@@ -150,6 +146,8 @@ leagueBtn.addEventListener("click", e => {
 });
 leaguePop.addEventListener("click", e => {
   if (e.target === leaguePop) { leaguePop.hidden = true; leagueBtn.setAttribute("aria-expanded", "false"); return; }
+  const langBtn = e.target.closest("[data-lang]");
+  if (langBtn) { I18n.set(langBtn.dataset.lang); return; }
   const b = e.target.closest(".league-opt");
   if (b) choose(b.dataset.league);
 });

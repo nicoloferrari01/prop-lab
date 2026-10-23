@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HTML = ROOT / "app" / "index.html"
 META = '<meta http-equiv="Cache-Control" content="no-cache">'
 LOCAL = re.compile(
-    r"^(?:style\.css|app\.js|league\.js|injuries\.js|update\.js|schedule\.js|"
+    r"^(?:style\.css|i18n\.js|app\.js|league\.js|injuries\.js|update\.js|schedule\.js|"
     r"data/(?:nba/)?[^/?#]+\.js|icon\.svg|apple-touch-icon\.png)$"
 )
 

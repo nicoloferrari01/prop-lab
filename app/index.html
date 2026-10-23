@@ -15,17 +15,17 @@
 </head>
 <body>
 <header class="top" id="top">
-  <div class="brand"><img class="logo" src="icon.svg" alt="" width="28" height="28"><span class="dot pending" id="status-dot" title="Controllo nuove partite…"></span><button type="button" class="brand-btn" id="league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span id="league-label">NBA</span> <b>Prop Lab</b></button><button type="button" class="help" id="help" aria-label="Guida" aria-haspopup="dialog" aria-controls="guide">i</button></div>
+  <div class="brand"><img class="logo" src="icon.svg" alt="" width="28" height="28"><span class="dot pending" id="status-dot" data-i18n="checking" data-i18n-attr="title" title="Controllo nuove partite…"></span><button type="button" class="brand-btn" id="league-btn" aria-haspopup="dialog" aria-controls="league-pop" aria-expanded="false"><span id="league-label">NBA</span> <b>Prop Lab</b></button><button type="button" class="help" id="help" data-i18n="aria_help" data-i18n-attr="aria-label" aria-label="Guida" aria-haspopup="dialog" aria-controls="guide">i</button></div>
   <nav class="tabs" id="tabs">
-    <button data-v="player"><span class="tab-l">Giocatrice</span><span class="tab-s">Gioc.</span></button>
-    <button data-v="markets"><span class="tab-l">Listone</span><span class="tab-s">Listone</span></button>
-    <button data-v="games" class="on"><span class="tab-l">Partite</span><span class="tab-s">Part.</span></button>
+    <button data-v="player"><span class="tab-l" data-i18n="tab_player_f">Giocatrice</span><span class="tab-s" data-i18n="tab_player_s">Gioc.</span></button>
+    <button data-v="markets"><span class="tab-l" data-i18n="tab_board">Listone</span><span class="tab-s" data-i18n="tab_board_s">Listone</span></button>
+    <button data-v="games" class="on"><span class="tab-l" data-i18n="tab_games">Partite</span><span class="tab-s" data-i18n="tab_games_s">Part.</span></button>
   </nav>
-  <button type="button" class="search-toggle" id="search-toggle" aria-label="Cerca" aria-expanded="false">
+  <button type="button" class="search-toggle" id="search-toggle" data-i18n="aria_search" data-i18n-attr="aria-label" aria-label="Cerca" aria-expanded="false">
     <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.4 10.4L13.5 13.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
   </button>
   <div class="search">
-    <input id="q" type="search" placeholder="Cerca giocatore o squadra…" autocomplete="off">
+    <input id="q" type="search" data-i18n="search_ph" data-i18n-attr="placeholder" placeholder="Cerca giocatore o squadra…" autocomplete="off">
     <ul id="results" class="results"></ul>
   </div>
 </header>
@@ -50,40 +50,40 @@
     <div class="chips" id="stats"></div>
     <div class="primary">
       <div class="line">
-        <span class="lbl">Linea</span>
+        <span class="lbl" data-i18n="line">Linea</span>
         <div class="step">
-          <button id="minus" type="button" aria-label="Diminuisci">−</button>
+          <button id="minus" type="button" data-i18n="aria_dec" data-i18n-attr="aria-label" aria-label="Diminuisci">−</button>
           <input id="line" type="number" step="0.5">
-          <button id="plus" type="button" aria-label="Aumenta">+</button>
+          <button id="plus" type="button" data-i18n="aria_inc" data-i18n-attr="aria-label" aria-label="Aumenta">+</button>
         </div>
-        <button id="reset" class="ghost" type="button">Mediana</button>
+        <button id="reset" class="ghost" type="button" data-i18n="median">Mediana</button>
       </div>
       <div class="chips" id="periods"></div>
     </div>
     <details class="filters" id="player-filters">
-      <summary>Filtri <span class="badge" id="pf-badge" hidden></span></summary>
+      <summary><span data-i18n="filters">Filtri</span> <span class="badge" id="pf-badge" hidden></span></summary>
       <div class="filter-body">
-        <label class="sel"><span class="lbl">Avversaria</span><select id="opp"></select></label>
+        <label class="sel"><span class="lbl" data-i18n-fem="opp">Avversaria</span><select id="opp"></select></label>
         <div class="chips" id="phase"></div>
       </div>
     </details>
   </section>
 
-  <div class="seg" id="venue-seg" data-i="0" role="tablist" aria-label="Casa o trasferta">
+  <div class="seg" id="venue-seg" data-i="0" role="tablist" data-i18n="aria_venue" data-i18n-attr="aria-label" aria-label="Casa o trasferta">
     <span class="seg-thumb" aria-hidden="true"></span>
-    <button type="button" role="tab" data-v="all" aria-selected="true">Tutte</button>
-    <button type="button" role="tab" data-v="home" aria-selected="false">Casa</button>
-    <button type="button" role="tab" data-v="away" aria-selected="false">Trasferta</button>
+    <button type="button" role="tab" data-v="all" aria-selected="true" data-i18n="venue_all">Tutte</button>
+    <button type="button" role="tab" data-v="home" aria-selected="false" data-i18n="venue_home">Casa</button>
+    <button type="button" role="tab" data-v="away" aria-selected="false" data-i18n="venue_away">Trasferta</button>
   </div>
   <section class="hits" id="hits"></section>
 
   <section class="card">
-    <div class="cardhead"><h2 id="charttitle"></h2><div class="legend"><span class="sw over"></span>Over <span class="sw under"></span>Under <span class="sw push"></span>Push <span class="sw special"></span>Speciale</div></div>
+    <div class="cardhead"><h2 id="charttitle"></h2><div class="legend"><span class="sw over"></span><span data-i18n="over">Over</span> <span class="sw under"></span><span data-i18n="under">Under</span> <span class="sw push"></span><span data-i18n="push">Push</span> <span class="sw special"></span><span data-i18n="special">Speciale</span></div></div>
     <div id="chart" class="chart"></div>
   </section>
 
   <section class="card">
-    <div class="cardhead"><h2>Game log</h2></div>
+    <div class="cardhead"><h2 data-i18n="gamelog">Game log</h2></div>
     <div class="tablewrap"><table id="log"></table></div>
   </section>
 </main>
@@ -92,20 +92,20 @@
   <section class="controls">
     <div class="chips" id="m-stats"></div>
     <div class="primary">
-      <div class="line" id="m-fixedwrap"><span class="lbl">Linea fissa</span><div class="step"><button id="m-minus" type="button" aria-label="Diminuisci">−</button><input id="m-fixed" type="number" step="0.5"><button id="m-plus" type="button" aria-label="Aumenta">+</button></div></div>
-      <button id="m-resetlines" class="ghostbtn">Ripristina linee</button>
+      <div class="line" id="m-fixedwrap"><span class="lbl" data-i18n="fixed_line">Linea fissa</span><div class="step"><button id="m-minus" type="button" data-i18n="aria_dec" data-i18n-attr="aria-label" aria-label="Diminuisci">−</button><input id="m-fixed" type="number" step="0.5"><button id="m-plus" type="button" data-i18n="aria_inc" data-i18n-attr="aria-label" aria-label="Aumenta">+</button></div></div>
+      <button id="m-resetlines" class="ghostbtn" data-i18n="reset_lines">Ripristina linee</button>
       <div class="grow">
-        <span class="lbl">Base calcolo</span>
+        <span class="lbl" data-i18n="line_basis">Base calcolo</span>
         <div class="chips" id="m-period"></div>
       </div>
     </div>
     <details class="filters" id="market-filters">
-      <summary>Filtri <span class="badge" id="mf-badge" hidden></span></summary>
+      <summary><span data-i18n="filters">Filtri</span> <span class="badge" id="mf-badge" hidden></span></summary>
       <div class="filter-body">
-        <label class="sel"><span class="lbl">Squadra</span><select id="m-team"></select></label>
-        <label class="sel"><span class="lbl">Avversaria</span><select id="m-opp"></select></label>
-        <label class="sel"><span class="lbl">Min. minuti</span><input id="m-minmin" class="num" type="number" min="0" step="1"></label>
-        <label class="sel"><span class="lbl">Min. partite</span><input id="m-ming" class="num" type="number" min="1" step="1"></label>
+        <label class="sel"><span class="lbl" data-i18n="team">Squadra</span><select id="m-team"></select></label>
+        <label class="sel"><span class="lbl" data-i18n-fem="opp">Avversaria</span><select id="m-opp"></select></label>
+        <label class="sel"><span class="lbl" data-i18n="min_min">Min. minuti</span><input id="m-minmin" class="num" type="number" min="0" step="1"></label>
+        <label class="sel"><span class="lbl" data-i18n="min_games">Min. partite</span><input id="m-ming" class="num" type="number" min="1" step="1"></label>
         <div class="chips" id="m-venue"></div>
         <div class="chips" id="m-phase"></div>
         <div class="chips" id="m-linemode"></div>
@@ -113,17 +113,17 @@
     </details>
   </section>
   <section class="card">
-    <div class="cardhead"><h2 id="m-title"></h2><div class="legend">Clic su una riga per aprire la scheda · clic sulle intestazioni per ordinare</div></div>
+    <div class="cardhead"><h2 id="m-title"></h2><div class="legend" data-i18n="board_hint">Clic su una riga per aprire la scheda · clic sulle intestazioni per ordinare</div></div>
     <div class="tablewrap tall"><table id="m-table" class="mtable"></table></div>
   </section>
 </main>
 <main id="view-games">
   <section class="card">
-    <div class="cardhead"><h2>Prossime partite</h2><div class="legend" id="g-src"></div></div>
+    <div class="cardhead"><h2 data-i18n="upcoming">Prossime partite</h2><div class="legend" id="g-src"></div></div>
     <div id="g-up" class="games"></div>
   </section>
   <section class="card">
-    <div class="cardhead"><h2>Risultati recenti</h2><div class="legend" id="g-rec-note">Ultimi 7 giorni</div></div>
+    <div class="cardhead"><h2 data-i18n="recent">Risultati recenti</h2><div class="legend" id="g-rec-note" data-i18n="last7">Ultimi 7 giorni</div></div>
     <div id="g-rec" class="games"></div>
   </section>
 </main>
@@ -133,10 +133,10 @@
   <section class="controls">
     <div class="chips" id="mu-stats"></div>
     <details class="filters" id="mu-filters">
-      <summary>Filtri <span class="badge" id="uf-badge" hidden></span></summary>
+      <summary><span data-i18n="filters">Filtri</span> <span class="badge" id="uf-badge" hidden></span></summary>
       <div class="filter-body">
-        <div class="filter-line"><span class="lbl">Casa/Trasferta</span><div class="chips" id="mu-venue"></div></div>
-        <div class="filter-line"><span class="lbl">Minuti medi ≥</span><div class="chips" id="mu-min"></div></div>
+        <div class="filter-line"><span class="lbl" data-i18n="venue_pair">Casa/Trasferta</span><div class="chips" id="mu-venue"></div></div>
+        <div class="filter-line"><span class="lbl" data-i18n="min_avg">Minuti medi ≥</span><div class="chips" id="mu-min"></div></div>
       </div>
     </details>
     <div class="row" id="mu-links"></div>
@@ -147,10 +147,10 @@
   </div>
 </main>
 <footer id="foot">
-  <div class="status" id="status" role="status">Controllo nuove partite…</div>
+  <div class="status" id="status" role="status" data-i18n="checking">Controllo nuove partite…</div>
   <div class="fresh" id="fresh"></div>
   <div class="foot-note" id="foot-note"></div>
-  <div class="credit">Progetto personale di Nicolò Ferrari</div>
+  <div class="credit" data-i18n="credit">Progetto personale di Nicolò Ferrari</div>
 </footer>
 <div id="guide" class="guide" hidden role="dialog" aria-modal="true" aria-labelledby="guide-t0">
   <div class="guide-box">
@@ -158,8 +158,8 @@
       <div class="guide-track" id="guide-track">
         <section class="guide-slide" aria-hidden="false">
           <article class="guide-card">
-            <h2 id="guide-t0">Le colonne</h2>
-            <p>Ogni colonna è una partita: verde sopra la linea, rosso sotto. La linea si regola con +/−; tocca una colonna per i dettagli.</p>
+            <h2 id="guide-t0" data-i18n="guide_t0">Le colonne</h2>
+            <p data-i18n="guide_p0">Ogni colonna è una partita: verde sopra la linea, rosso sotto. La linea si regola con +/−; tocca una colonna per i dettagli.</p>
             <div class="demo" aria-hidden="true">
               <div class="demo-chart">
                 <span class="demo-line"></span>
@@ -176,28 +176,28 @@
         </section>
         <section class="guide-slide" aria-hidden="true" inert>
           <article class="guide-card">
-            <h2 id="guide-t1">Le percentuali</h2>
-            <p>Stagione conta solo la stagione in corso; Ultime 5, 10 e 20 includono anche le passate. Il cursore Tutte, Casa o Trasferta filtra le statistiche e parte da Tutte.</p>
+            <h2 id="guide-t1" data-i18n="guide_t1">Le percentuali</h2>
+            <p data-i18n="guide_p1">Stagione conta solo la stagione in corso; Ultime 5, 10 e 20 includono anche le passate. Il cursore Tutte, Casa o Trasferta filtra le statistiche e parte da Tutte.</p>
             <div class="demo" aria-hidden="true">
-              <div class="demo-chips"><span>Ultime 5</span><span>10</span><span>20</span><span class="on">Stagione</span></div>
-              <div class="seg demo-seg" data-i="0"><span class="seg-thumb"></span><b>Tutte</b><b>Casa</b><b>Trasferta</b></div>
+              <div class="demo-chips"><span data-i18n="last5">Ultime 5</span><span>10</span><span>20</span><span class="on" data-i18n="season">Stagione</span></div>
+              <div class="seg demo-seg" data-i="0"><span class="seg-thumb"></span><b data-i18n="venue_all">Tutte</b><b data-i18n="venue_home">Casa</b><b data-i18n="venue_away">Trasferta</b></div>
             </div>
           </article>
         </section>
         <section class="guide-slide" aria-hidden="true" inert>
           <article class="guide-card">
-            <h2 id="guide-t2">Partite e giocatori</h2>
-            <p>L'app si apre su Partite: tocca una partita per vedere i giocatori. «Prossima partita contro X» sotto un giocatore apre quella partita, e indietro torna lì.</p>
+            <h2 id="guide-t2" data-i18n="guide_t2">Partite e giocatori</h2>
+            <p data-i18n="guide_p2">L'app si apre su Partite: tocca una partita per vedere i giocatori. «Prossima partita contro X» sotto un giocatore apre quella partita, e indietro torna lì.</p>
             <div class="demo" aria-hidden="true">
               <div class="demo-game"><span>ATL</span><span class="vs">@</span><span>NY</span></div>
-              <div class="demo-next">Prossima: vs NY <span class="chev">›</span></div>
+              <div class="demo-next"><span data-i18n="guide_demo_next">Prossima: vs NY</span> <span class="chev">›</span></div>
             </div>
           </article>
         </section>
         <section class="guide-slide" aria-hidden="true" inert>
           <article class="guide-card">
-            <h2 id="guide-t3">Simboli</h2>
-            <p>🚑 è fuori e 🤔 in dubbio; le colonne tratteggiate sono partite speciali, come l'All-Star, visibili ma escluse da percentuali e medie. Tocca «Prop Lab» per cambiare campionato.</p>
+            <h2 id="guide-t3" data-i18n="guide_t3">Simboli</h2>
+            <p data-i18n="guide_p3">🚑 è fuori e 🤔 in dubbio; le colonne tratteggiate sono partite speciali, come l'All-Star, visibili ma escluse da percentuali e medie. Tocca «Prop Lab» per cambiare campionato.</p>
             <div class="demo" aria-hidden="true">
               <div class="demo-marks"><span>🚑</span><span>🤔</span><span class="demo-col"><i class="demo-hatch"></i><small>ASG</small></span></div>
               <div class="demo-brand"><b>Prop Lab</b></div>
@@ -206,25 +206,33 @@
         </section>
       </div>
     </div>
-    <div class="guide-dots" id="guide-dots" role="tablist" aria-label="Schede della guida">
-      <button type="button" class="guide-dot on" role="tab" aria-selected="true" aria-label="Le colonne"></button>
-      <button type="button" class="guide-dot" role="tab" aria-selected="false" aria-label="Le percentuali"></button>
-      <button type="button" class="guide-dot" role="tab" aria-selected="false" aria-label="Partite e giocatori"></button>
-      <button type="button" class="guide-dot" role="tab" aria-selected="false" aria-label="Simboli"></button>
+    <div class="guide-dots" id="guide-dots" role="tablist" data-i18n="aria_guide" data-i18n-attr="aria-label" aria-label="Schede della guida">
+      <button type="button" class="guide-dot on" role="tab" aria-selected="true" data-i18n="guide_t0" data-i18n-attr="aria-label" aria-label="Le colonne"></button>
+      <button type="button" class="guide-dot" role="tab" aria-selected="false" data-i18n="guide_t1" data-i18n-attr="aria-label" aria-label="Le percentuali"></button>
+      <button type="button" class="guide-dot" role="tab" aria-selected="false" data-i18n="guide_t2" data-i18n-attr="aria-label" aria-label="Partite e giocatori"></button>
+      <button type="button" class="guide-dot" role="tab" aria-selected="false" data-i18n="guide_t3" data-i18n-attr="aria-label" aria-label="Simboli"></button>
     </div>
     <div class="guide-nav">
-      <button type="button" id="guide-skip">Salta</button>
-      <button type="button" id="guide-next">Avanti</button>
+      <button type="button" id="guide-skip" data-i18n="guide_skip">Salta</button>
+      <button type="button" id="guide-next" data-i18n="guide_next">Avanti</button>
     </div>
   </div>
 </div>
 <div id="league-pop" class="league-pop" hidden>
   <div class="league-sheet card" role="dialog" aria-modal="true" aria-labelledby="league-h">
-    <div class="league-h" id="league-h">Campionato</div>
+    <div class="league-h" id="league-h" data-i18n="league">Campionato</div>
     <button type="button" class="league-opt" data-league="nba">NBA</button>
     <button type="button" class="league-opt" data-league="wnba">WNBA</button>
+    <div class="lang-h" id="lang-h" data-i18n="language">Lingua</div>
+    <div class="lang-picks" id="lang-picks" role="group" data-i18n="language" data-i18n-attr="aria-label">
+      <button type="button" data-lang="it" aria-pressed="false">Italiano</button>
+      <button type="button" data-lang="en" aria-pressed="false">English</button>
+      <button type="button" data-lang="es" aria-pressed="false">Español</button>
+      <button type="button" data-lang="fr" aria-pressed="false">Français</button>
+    </div>
   </div>
 </div>
+<script src="i18n.js"></script>
 <script src="data/gamelogs.js"></script>
 <script src="data/injuries.js"></script>
 <script src="app.js"></script>

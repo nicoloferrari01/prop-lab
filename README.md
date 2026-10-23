@@ -4,7 +4,7 @@ Sito live: https://nicoloferrari01.github.io/prop-lab/
 
 Pages source must be set to "GitHub Actions" (Settings → Pages → Source).
 
-WNBA e NBA nello stesso visualizzatore. Il titolo in testata mostra la lega corrente; toccandolo si sceglie WNBA o NBA. La scelta resta nel browser e nell'URL (`?league=nba` o `?league=wnba`). Senza una scelta salvata, d'ottobre a giugno si apre l'NBA, altrimenti la WNBA. All'apertura si vede Partite; `?player=` apre quella scheda e la riga «Prossima» apre la partita in calendario.
+WNBA e NBA nello stesso visualizzatore. Il titolo in testata mostra la lega corrente; toccandolo si sceglie WNBA o NBA e, sotto, la lingua (italiano, inglese, spagnolo o francese). Alla prima visita segue la lingua del browser, inglese se non è tra queste, e la scelta resta salvata. La scelta resta nel browser e nell'URL (`?league=nba` o `?league=wnba`). Senza una scelta salvata, d'ottobre a giugno si apre l'NBA, altrimenti la WNBA. All'apertura si vede Partite; `?player=` apre quella scheda e la riga «Prossima» apre la partita in calendario.
 
 Visualizzatore stile Outlier: barre partita per partita vs una linea regolabile, hit rate (ultime 5/10/20, stagione, vs avversaria, casa/trasferta, playoff). I dati NBA (stagione in corso e quella precedente) si caricano solo quando si sceglie l'NBA.
 

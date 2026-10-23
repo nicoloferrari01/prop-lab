@@ -2,7 +2,9 @@ window.App = (() => {
 let D = window.WNBA_DATA;
 const ix = Object.fromEntries(D.fields.map((f, i) => [f, i]));
 function reindex(fields) { for (const k of Object.keys(ix)) delete ix[k]; fields.forEach((f, i) => { ix[f] = i; }); }
-let L = { id: "wnba", label: "WNBA", shot: "wnba", noun: "giocatrici", one: "Giocatrice", none: "Nessuna giocatrice nei dati con questi filtri", ph: "Cerca giocatrice o squadra…", line: "Linea per giocatrice (mediana)", pause: "La WNBA è in pausa: la nuova stagione di solito parte a maggio. Intanto ecco gli ultimi risultati.", stars: ["A'ja Wilson"] };
+let L = { id: "wnba", label: "WNBA", shot: "wnba", fem: true, stars: ["A'ja Wilson"] };
+const tr = (k, v) => I18n.t(k, v);
+const trf = (k, v) => I18n.tf(k, !!(L && L.fem), v);
 const fold = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 function pickStar() {
   for (const n of L.stars || []) { const f = fold(n); const p = D.players.find(x => fold(x.name).includes(f)); if (p) return p; }
@@ -10,24 +12,25 @@ function pickStar() {
 }
 function freshText() {
   const lab = D.label || D.season;
-  const hist = D.historyLabel ? ` · storico ${D.historyLabel}` : "";
-  return `Dati ${lab} fino al ${fmtD(D.last)}/${String(D.last).slice(0, 4)} · ${D.games} partite${hist}`;
+  const hist = D.historyLabel ? tr("fresh_hist", { label: D.historyLabel }) : "";
+  return tr("fresh", { season: lab, date: I18n.fmtDate(D.last, true), games: D.games, hist });
 }
 const STATS = [
-  ["pts","Punti",g=>g[ix.pts]],["reb","Rimbalzi",g=>g[ix.reb]],["ast","Assist",g=>g[ix.ast]],
-  ["fg3","Triple segnate",g=>g[ix.fg3]],["pra","P+R+A",g=>g[ix.pts]+g[ix.reb]+g[ix.ast]],
-  ["pr","P+R",g=>g[ix.pts]+g[ix.reb]],["pa","P+A",g=>g[ix.pts]+g[ix.ast]],["ra","R+A",g=>g[ix.reb]+g[ix.ast]],
-  ["stl","Recuperi",g=>g[ix.stl]],["blk","Stoppate",g=>g[ix.blk]],["sb","Rec+Stop",g=>g[ix.stl]+g[ix.blk]],
-  ["tov","Palle perse",g=>g[ix.tov]],["min","Minuti",g=>g[ix.min]]];
-const PERIODS = [["5","Ultime 5"],["10","Ultime 10"],["20","Ultime 20"],["all","Stagione"]];
-const VENUE = [["all","Casa + Trasferta"],["home","Casa"],["away","Trasferta"]];
-const PHASE = [["all","RS + Playoff"],["2","Regular season"],["3","Playoff"]];
+  ["pts","stat_pts",g=>g[ix.pts]],["reb","stat_reb",g=>g[ix.reb]],["ast","stat_ast",g=>g[ix.ast]],
+  ["fg3","stat_fg3",g=>g[ix.fg3]],["pra","stat_pra",g=>g[ix.pts]+g[ix.reb]+g[ix.ast]],
+  ["pr","stat_pr",g=>g[ix.pts]+g[ix.reb]],["pa","stat_pa",g=>g[ix.pts]+g[ix.ast]],["ra","stat_ra",g=>g[ix.reb]+g[ix.ast]],
+  ["stl","stat_stl",g=>g[ix.stl]],["blk","stat_blk",g=>g[ix.blk]],["sb","stat_sb",g=>g[ix.stl]+g[ix.blk]],
+  ["tov","stat_tov",g=>g[ix.tov]],["min","stat_min",g=>g[ix.min]]];
+const PERIODS = [["5","last5"],["10","last10"],["20","last20"],["all","season"]];
+const VENUE = [["all","venue_both"],["home","venue_home"],["away","venue_away"]];
+const PHASE = [["all","phase_all"],["2","phase_rs"],["3","phase_po"]];
+const labeled = pairs => pairs.map(([v, k]) => [v, tr(k)]);
 const S = { p: D.players[0], stat: "pts", line: null, period: "10", opp: "all", venue: "all", phase: "all" };
 const $ = id => document.getElementById(id);
-const fmtD = d => { const [y,m,dd] = d.split("-"); return `${dd}/${m}`; };
+const fmtD = d => I18n.fmtDate(d, false);
 const median = a => { const s=[...a].sort((x,y)=>x-y), n=s.length; return n? (n%2? s[(n-1)/2] : (s[n/2-1]+s[n/2])/2):0; };
 const statFn = () => STATS.find(s => s[0] === S.stat)[2];
-const statName = () => STATS.find(s => s[0] === S.stat)[1];
+const statName = () => tr(STATS.find(s => s[0] === S.stat)[1]);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 let INJ_BY_ID = new Map(), INJ_BY_NAME = new Map(), injPopBtn = null;
 function injuryOf(p) {
@@ -36,7 +39,7 @@ function injuryOf(p) {
 }
 function injGlyph(x) {
   if (x && (x.mark === "🤔" || x.mark === "🚑")) return x.mark;
-  return String(x && x.line || "").startsWith("In dubbio") ? "🤔" : "🚑";
+  return "🚑";
 }
 function injHTML(p) {
   const x = injuryOf(p); if (!x) return "";
@@ -140,7 +143,11 @@ function chips(el, opts, key, after) {
 }
 function isSpecial(g) { return g[ix.st] === 9; }
 function counted(list) { return list.filter(g => !isSpecial(g)); }
-function spName(g) { const lab = ix.sp >= 0 && g[ix.sp] ? String(g[ix.sp]) : ""; return lab || "Speciale"; }
+function spName(g) {
+  const lab = ix.sp >= 0 && g[ix.sp] ? String(g[ix.sp]) : "";
+  const key = { "all-star": "sp_asg", "rising stars": "sp_rising", "skills": "sp_skills", "preseason": "sp_pre", "speciale": "sp_spec", "special": "sp_spec" }[lab.toLowerCase()];
+  return key ? tr(key) : (lab || tr("sp_spec"));
+}
 function spTag(g) {
   const n = spName(g);
   if (/all[-\s]?star/i.test(n)) return "ASG";
@@ -173,7 +180,7 @@ function search() {
   const f = fold(t);
   hits = D.players.filter(p => fold(p.name).includes(f) || fold(p.team) === f).slice(0, 30);
   sel = 0;
-  res.innerHTML = hits.map((p, i) => `<li data-i="${i}" class="${i===0?"on":""}"><span>${esc(p.name)}${injHTML(p)}</span><small>${p.team} · ${p.pos} · ${counted(p.g).length} PG</small></li>`).join("");
+  res.innerHTML = hits.map((p, i) => `<li data-i="${i}" class="${i===0?"on":""}"><span>${esc(p.name)}${injHTML(p)}</span><small>${p.team} · ${p.pos} · ${counted(p.g).length} ${tr("gp_short")}</small></li>`).join("");
   res.style.display = hits.length ? "block" : "none";
 }
 function pick(p) {
@@ -235,8 +242,8 @@ function rate(games) {
 function hitCard(title, games) {
   const r = rate(games); const cls = r.pct===null?"":r.pct>=60?"good":r.pct<=40?"bad":"mid";
   const col = r.pct===null?"var(--push)":r.pct>=60?"var(--good)":r.pct<=40?"var(--bad)":"var(--mid)";
-  const where = S.venue === "home" ? "casa" : S.venue === "away" ? "trasf." : "";
-  const count = r.n ? `${r.o} su ${r.n}` + (r.p ? ` · ${r.p} push` : "") : "nessuna partita";
+  const where = S.venue === "home" ? tr("where_home") : S.venue === "away" ? tr("where_away") : "";
+  const count = r.n ? tr("hit_of", { o: r.o, n: r.n }) + (r.p ? tr("hit_push", { p: r.p }) : "") : tr("no_games");
   const tail = where ? ` <span class="where">· ${where}</span>` : "";
   return `<div class="hit"><div class="t">${title}</div><div class="p ${cls}">${r.pct===null?"–":r.pct+"%"}</div>
     <div class="n">${count}${tail}</div>
@@ -260,15 +267,16 @@ function render() {
   injLine.hidden = !hurt; injLine.classList.remove("on"); injLine.textContent = "";
   injLine.dataset.line = hurt ? hurt.line : ""; injLine.setAttribute("aria-expanded", "false");
   if (hurt) injLine.setAttribute("aria-label", hurt.line); else injLine.removeAttribute("aria-label");
-  $("pmeta").textContent = `${p.team} · ${p.pos || "–"} · ${all.length} partite (${all.length-po} RS${po?`, ${po} playoff`:""})`;
+  const gamesWord = all.length === 1 ? tr("game_one") : tr("game_many");
+  $("pmeta").textContent = tr("pmeta", { team: p.team, pos: p.pos || "–", n: all.length, games: gamesWord, rs: all.length - po, po: po ? tr("pmeta_po", { n: po }) : "" });
   const pnext = $("pnext");
   pnext.hidden = !ng0;
   if (ng0) {
     const where = ng0.home.abbr === p.team ? "vs " + ng0.away.abbr : "@ " + ng0.home.abbr;
     const when = fmtWhen(ng0.date);
     pnext.dataset.game = ng0.id;
-    pnext.innerHTML = `Prossima: ${esc(where)}, ${esc(when)}<span class="chev" aria-hidden="true">›</span>`;
-    pnext.setAttribute("aria-label", `Apri la prossima partita, ${where}, ${when}`);
+    pnext.innerHTML = `${esc(tr("next_prefix"))} ${esc(where)}, ${esc(when)}<span class="chev" aria-hidden="true">›</span>`;
+    pnext.setAttribute("aria-label", tr("next_aria", { where, when }));
   } else {
     pnext.innerHTML = "";
     delete pnext.dataset.game;
@@ -278,25 +286,25 @@ function render() {
   const av = k => venueGames.length ? (venueGames.reduce((s,g)=>s+g[ix[k]],0)/venueGames.length).toFixed(1) : "–";
   $("avgs").innerHTML = [["min","MIN"],["pts","PTS"],["reb","REB"],["ast","AST"],["fg3","3PM"]].map(([k,l])=>`<div class="avg"><b>${av(k)}</b><span>${l}</span></div>`).join("");
 
-  chips($("stats"), STATS.map(s=>[s[0],s[1]]), "stat", defaultLine);
-  chips($("periods"), PERIODS, "period"); chips($("phase"), PHASE, "phase");
+  chips($("stats"), STATS.map(s => [s[0], tr(s[1])]), "stat", defaultLine);
+  chips($("periods"), labeled(PERIODS), "period"); chips($("phase"), labeled(PHASE), "phase");
   syncVenueSeg();
   setBadge("pf-badge", (S.opp !== "all") + (S.phase !== "all"));
   $("line").value = S.line;
   const opps = [...new Set(all.map(g=>g[ix.opp]))].sort();
-  $("opp").innerHTML = `<option value="all">Tutte</option>` + opps.map(o=>`<option value="${o}" ${S.opp===o?"selected":""}>${o} (${all.filter(g=>g[ix.opp]===o).length})</option>`).join("");
+  $("opp").innerHTML = `<option value="all">${esc(tr("team_all"))}</option>` + opps.map(o=>`<option value="${o}" ${S.opp===o?"selected":""}>${o} (${all.filter(g=>g[ix.opp]===o).length})</option>`).join("");
 
   // hit rate: calcolati su partite filtrate per casa/trasferta e fase; H2H sull'avversaria scelta
   const base = all.filter(g => (S.venue==="all"||g[ix.ha]===S.venue) && (S.phase==="all"||String(g[ix.st])===S.phase));
   const last = n => base.slice(-n);
   const ng = nextGame(p.team), ngOpp = ng ? (ng.home.abbr === p.team ? ng.away.abbr : ng.home.abbr) : null;
   const h2hOpp = S.opp !== "all" ? S.opp : (S.h2h || ngOpp || (all.length ? all[all.length-1][ix.opp] : ""));
-  const h2hLbl = h2hOpp === ngOpp && S.opp === "all" && !S.h2h ? `vs ${h2hOpp} · prossima` : `vs ${h2hOpp}`;
+  const h2hLbl = h2hOpp === ngOpp && S.opp === "all" && !S.h2h ? tr("vs_next", { opp: h2hOpp }) : tr("vs_name", { opp: h2hOpp });
   $("hits").innerHTML = [
-    hitCard("Ultime 5", last(5)), hitCard("Ultime 10", last(10)), hitCard("Ultime 20", last(20)),
-    hitCard("Stagione", base.filter(inCurrentSeason)), hitCard(h2hLbl, base.filter(g=>g[ix.opp]===h2hOpp)),
-    hitCard("Casa", base.filter(g=>g[ix.ha]==="home")), hitCard("Trasferta", base.filter(g=>g[ix.ha]==="away")),
-    ...(po ? [hitCard("Playoff", base.filter(g => g[ix.st] === 3 || g[ix.st] === 5))] : [])
+    hitCard(tr("last5"), last(5)), hitCard(tr("last10"), last(10)), hitCard(tr("last20"), last(20)),
+    hitCard(tr("season"), base.filter(inCurrentSeason)), hitCard(h2hLbl, base.filter(g=>g[ix.opp]===h2hOpp)),
+    hitCard(tr("venue_home"), base.filter(g=>g[ix.ha]==="home")), hitCard(tr("venue_away"), base.filter(g=>g[ix.ha]==="away")),
+    ...(po ? [hitCard(tr("playoff"), base.filter(g => g[ix.st] === 3 || g[ix.st] === 5))] : [])
   ].join("");
 
   const pool = filtered();
@@ -306,7 +314,10 @@ function render() {
   const logCore = S.period === "all" ? pool : core;
   const logGames = mergeChrono(logCore, inSpan(specs, logCore));
   const vals = core.map(f), r = rate(core);
-  $("charttitle").textContent = `${statName()} · linea ${S.line} · ${core.length ? `${r.o}/${r.n} over (${r.pct}%) · media ${(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)}` : "nessuna partita con questi filtri"}`;
+  const avg = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : "";
+  $("charttitle").textContent = core.length
+    ? tr("chart_sum", { stat: statName(), line: S.line, o: r.o, n: r.n, pct: r.pct, avg })
+    : tr("chart_empty", { stat: statName(), line: S.line });
   drawChart(games, games.map(f));
   drawLog([...logGames].reverse());
   $("fresh").textContent = freshText();
@@ -343,10 +354,11 @@ function drawChart(games, vals) {
   el.innerHTML = `<div class="chart-in"${scroll ? ` style="width:${Math.ceil(inner)}px"` : ""}>${s}</div>`;
   const tip = $("tip");
   const fillTip = i => { const g = games[i];
+    const wl = g[ix.w] ? tr("w_short") : tr("l_short");
     const head = isSpecial(g)
-      ? `<b>${fmtD(g[ix.date])} ${esc(spName(g))}</b> · ${g[ix.w]?"V":"S"} ${g[ix.ts]}-${g[ix.os]}`
-      : `<b>${fmtD(g[ix.date])} ${g[ix.ha]==="away"?"@":"vs"} ${g[ix.opp]}</b> · ${g[ix.w]?"V":"S"} ${g[ix.ts]}-${g[ix.os]}${g[ix.st]===3?" · Playoff":""}`;
-    tip.innerHTML = `${head}<br>${statName()}: <b>${vals[i]}</b><br>${g[ix.min]} min · ${g[ix.pts]} pt · ${g[ix.reb]} rb · ${g[ix.ast]} ast · ${g[ix.fg3]}/${g[ix.fg3a]} da 3${isSpecial(g) ? "<br>Partita speciale · non conteggiata" : ""}`; };
+      ? `<b>${fmtD(g[ix.date])} ${esc(spName(g))}</b> · ${wl} ${g[ix.ts]}-${g[ix.os]}`
+      : `<b>${fmtD(g[ix.date])} ${g[ix.ha]==="away"?"@":"vs"} ${g[ix.opp]}</b> · ${wl} ${g[ix.ts]}-${g[ix.os]}${g[ix.st]===3 ? tr("tip_playoff") : ""}`;
+    tip.innerHTML = `${head}<br>${esc(statName())}: <b>${vals[i]}</b><br>${tr("tip_stats", { min: g[ix.min], pts: g[ix.pts], reb: g[ix.reb], ast: g[ix.ast], fg3: g[ix.fg3], fg3a: g[ix.fg3a] })}${isSpecial(g) ? "<br>" + esc(tr("tip_special")) : ""}`; };
   el.querySelectorAll("g.b").forEach(gEl => {
     const show = ev => { fillTip(+gEl.dataset.i); placeTip(tip, ev.clientX, ev.clientY); };
     gEl.addEventListener("pointerdown", show);
@@ -393,7 +405,7 @@ function placeTip(tip, cx, cy) {
 
 function drawLog(games) {
   const f = statFn();
-  const head = ["Data","Avv.","Ris.","MIN","PTS","REB","AST","3PM","STL","BLK","TOV","TIRI",statName()];
+  const head = [tr("log_date"), tr("log_opp"), tr("log_res"), "MIN", "PTS", "REB", "AST", "3PM", "STL", "BLK", "TOV", tr("log_fg"), statName()];
   let prev = null, body = "";
   for (const g of games) {
     const name = seasonName(g);
@@ -402,7 +414,7 @@ function drawLog(games) {
     const v = f(g), spec = isSpecial(g);
     const tag = spec ? ` <small class="asg">${spTag(g)}</small>` : (g[ix.st]===3||g[ix.st]===5?" <small style='color:var(--acc)'>PO</small>":"");
     const opp = spec ? esc(spName(g)) : `${g[ix.ha]==="away"?"@":"vs"} ${g[ix.opp]}`;
-    body += `<tr class="${spec?"special":""}"><td>${fmtD(g[ix.date])}${tag}</td><td>${opp}</td><td>${g[ix.w]?"V":"S"} ${g[ix.ts]}-${g[ix.os]}</td>
+    body += `<tr class="${spec?"special":""}"><td>${fmtD(g[ix.date])}${tag}</td><td>${opp}</td><td>${g[ix.w]?tr("w_short"):tr("l_short")} ${g[ix.ts]}-${g[ix.os]}</td>
     <td>${g[ix.min]}</td><td>${g[ix.pts]}</td><td>${g[ix.reb]}</td><td>${g[ix.ast]}</td><td>${g[ix.fg3]}/${g[ix.fg3a]}</td><td>${g[ix.stl]}</td><td>${g[ix.blk]}</td><td>${g[ix.tov]}</td><td>${g[ix.fgm]}/${g[ix.fga]}</td>
     <td class="hl ${spec?"":v>S.line?"good":v<S.line?"bad":""}">${Number.isInteger(v)?v:v.toFixed(1)}</td></tr>`;
   }
@@ -416,7 +428,7 @@ const M = { stat: "pts", team: "all", opp: "all", minMin: 15, minG: 5, period: "
             lineMode: "median", fixed: null, lines: {}, sort: "h10", dir: -1 };
 let view = "games", fromGame = null, pinGame = null, pinShown = null;
 const mFn = () => MKTS.find(s => s[0] === M.stat)[2];
-const mName = () => MKTS.find(s => s[0] === M.stat)[1];
+const mName = () => tr(MKTS.find(s => s[0] === M.stat)[1]);
 const pctCls = p => p === null ? "na" : p >= 60 ? "good" : p <= 40 ? "bad" : "mid";
 function mChips(el, opts, key, after) {
   el.innerHTML = "";
@@ -459,17 +471,23 @@ function spark(vals, line) {
   return s + `<line x1="0" x2="${W}" y1="${y(line)}" y2="${y(line)}" style="stroke:var(--refline)" stroke-width="1.2" stroke-dasharray="3 2"/></svg>`;
 }
 const COLS = [
-  ["name","Giocatrice",r=>r.p.name], ["team","Squadra",r=>r.p.team], ["spark","Ultime 10",null],
-  ["gp","PG",r=>r.gp], ["mins","MIN",r=>r.mins], ["avg","Media",r=>r.avg], ["med","Mediana",r=>r.med], ["line","Linea",r=>r.line],
-  ["h5","L5",r=>r.h5.pct], ["h10","L10",r=>r.h10.pct], ["h20","L20",r=>r.h20.pct], ["hs","Stagione",r=>r.hs.pct], ["hv","vs AVV",r=>r.hv.pct]];
+  ["name","tab_player",r=>r.p.name], ["team","col_team",r=>r.p.team], ["spark","col_last10",null],
+  ["gp","col_gp",r=>r.gp], ["mins","col_min",r=>r.mins], ["avg","col_avg",r=>r.avg], ["med","col_med",r=>r.med], ["line","col_line",r=>r.line],
+  ["h5","L5",r=>r.h5.pct], ["h10","L10",r=>r.h10.pct], ["h20","L20",r=>r.h20.pct], ["hs","col_season",r=>r.hs.pct], ["hv","col_vs",r=>r.hv.pct]];
+function colLabel(c) {
+  if (c[0] === "name") return trf("tab_player");
+  if (c[0] === "hv") return M.opp === "all" ? tr("col_vs") : `vs ${M.opp}`;
+  if (/^L\d+$/.test(c[1])) return c[1];
+  return tr(c[1]);
+}
 function renderMarkets() {
-  mChips($("m-stats"), MKTS.map(s => [s[0], s[1]]), "stat", () => { M.lines = {}; M.fixed = null; });
-  mChips($("m-period"), PERIODS, "period"); mChips($("m-venue"), VENUE, "venue"); mChips($("m-phase"), PHASE, "phase");
-  mChips($("m-linemode"), [["median", L.line],["fixed","Linea fissa"]], "lineMode");
+  mChips($("m-stats"), MKTS.map(s => [s[0], tr(s[1])]), "stat", () => { M.lines = {}; M.fixed = null; });
+  mChips($("m-period"), labeled(PERIODS), "period"); mChips($("m-venue"), labeled(VENUE), "venue"); mChips($("m-phase"), labeled(PHASE), "phase");
+  mChips($("m-linemode"), [["median", trf("line_mode")],["fixed", tr("fixed_line")]], "lineMode");
   setBadge("mf-badge", (M.team !== "all") + (M.opp !== "all") + (M.minMin !== 15) + (M.minG !== 5) + (M.venue !== "all") + (M.phase !== "all") + (M.lineMode !== "median"));
   const teams = [...new Set(D.players.map(p => p.team))].sort();
-  $("m-team").innerHTML = `<option value="all">Tutte</option>` + teams.map(t => `<option ${M.team===t?"selected":""}>${t}</option>`).join("");
-  $("m-opp").innerHTML = `<option value="all">Nessuna</option>` + teams.map(t => `<option ${M.opp===t?"selected":""}>${t}</option>`).join("");
+  $("m-team").innerHTML = `<option value="all">${esc(tr("team_all"))}</option>` + teams.map(t => `<option ${M.team===t?"selected":""}>${esc(t)}</option>`).join("");
+  $("m-opp").innerHTML = `<option value="all">${esc(trf("opp_none"))}</option>` + teams.map(t => `<option ${M.opp===t?"selected":""}>${esc(t)}</option>`).join("");
   $("m-minmin").value = M.minMin; $("m-ming").value = M.minG;
   if (M.fixed === null) M.fixed = computeRowsAuto();
   $("fresh").textContent = freshText();
@@ -479,8 +497,8 @@ function renderMarkets() {
   rows.sort((a, b) => { const x = get(a), y = get(b);
     if (x === null || x === undefined) return 1; if (y === null || y === undefined) return -1;
     return (typeof x === "string" ? x.localeCompare(y) : x - y) * M.dir || b.gp - a.gp; });
-  const hdr = COLS.map(c => c[0] === "hv" ? (M.opp === "all" ? "vs AVV" : `vs ${M.opp}`) : c[1]);
-  $("m-title").textContent = `${mName()} · ${rows.length} ${L.noun} · ${M.lineMode === "fixed" ? `linea fissa ${M.fixed}` : "linea = mediana arrotondata a .5 (modificabile)"}`;
+  const hdr = COLS.map(colLabel);
+  $("m-title").textContent = tr("board_title", { stat: mName(), n: rows.length, noun: trf("noun"), note: M.lineMode === "fixed" ? tr("fixed_at", { n: M.fixed }) : tr("median_note") });
   const hcell = h => h.pct === null ? `<td class="hr na">–</td>` : `<td class="hr ${pctCls(h.pct)}"><b>${h.pct}%</b><small>${h.o}/${h.n}</small></td>`;
   $("m-table").innerHTML = `<thead><tr>${COLS.map((c, i) => `<th data-k="${c[0]}" class="${M.sort===c[0]?"sorted":""}">${hdr[i]}${M.sort===c[0]?(M.dir<0?" ▾":" ▴"):""}</th>`).join("")}</tr></thead><tbody>` +
     rows.map(r => `<tr data-id="${r.p.id}" data-line="${r.line}"><td class="pl"><b>${esc(r.p.name)}</b>${injHTML(r.p)}<small>${esc(r.p.pos||"")}</small></td><td>${r.p.team}</td><td>${spark(r.last10, r.line)}</td>
@@ -527,7 +545,7 @@ const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZon
 const zoneOpts = TZ ? { timeZone: TZ } : {};
 function zoneShort(date) {
   try {
-    const parts = new Intl.DateTimeFormat(undefined, { ...zoneOpts, timeZoneName: "short" }).formatToParts(date);
+    const parts = new Intl.DateTimeFormat(I18n.locale, { ...zoneOpts, timeZoneName: "short" }).formatToParts(date);
     return (parts.find(p => p.type === "timeZoneName") || {}).value || "";
   } catch (e) { return ""; }
 }
@@ -543,24 +561,24 @@ function shiftKey(key, days) {
 }
 function dayWord(date) {
   const key = localKey(date), today = localKey(new Date());
-  if (key === today) return "Oggi";
-  if (key === shiftKey(today, 1)) return "Domani";
+  if (key === today) return tr("today");
+  if (key === shiftKey(today, 1)) return tr("tomorrow");
   return "";
 }
 function fmtClock(date) {
   const d = date instanceof Date ? date : new Date(date);
-  const time = d.toLocaleTimeString("it-IT", { ...zoneOpts, hour: "2-digit", minute: "2-digit" });
+  const time = d.toLocaleTimeString(I18n.locale, { ...zoneOpts, hour: "2-digit", minute: "2-digit" });
   const z = zoneShort(d);
   return z ? `${time} ${z}` : time;
 }
 const fmtWhen = iso => {
   const d = new Date(iso);
-  const date = dayWord(d) || d.toLocaleDateString("it-IT", { ...zoneOpts, weekday: "short", day: "2-digit", month: "short" });
+  const date = dayWord(d) || d.toLocaleDateString(I18n.locale, { ...zoneOpts, weekday: "short", day: "2-digit", month: "short" });
   return `${date} · ${fmtClock(d)}`;
 };
 function dayHeading(iso) {
   const d = new Date(iso);
-  return dayWord(d) || d.toLocaleDateString("it-IT", { ...zoneOpts, weekday: "short", day: "2-digit", month: "short" });
+  return dayWord(d) || d.toLocaleDateString(I18n.locale, { ...zoneOpts, weekday: "short", day: "2-digit", month: "short" });
 }
 function gamesHTML(list) {
   let html = "", prev = "";
@@ -574,7 +592,7 @@ function gamesHTML(list) {
 function paintZoneNotes() {
   const z = zoneShort(new Date());
   const note = $("g-rec-note");
-  if (note) note.textContent = z ? `Ultimi 7 giorni · orari ${z}` : "Ultimi 7 giorni";
+  if (note) note.textContent = z ? tr("last7_tz", { z }) : tr("last7");
 }
 const logo = t => t.logo ? `<img src="${t.logo}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'phlogo'}))">` : `<span class="phlogo"></span>`;
 function sideBlock(t, lose) {
@@ -584,32 +602,43 @@ function nextGame(team) {
   if (!SCHED) return null; const now = Date.now();
   return SCHED.games.find(g => g.state !== "post" && new Date(g.date).getTime() > now - 4 * 3600e3 && (g.home.abbr === team || g.away.abbr === team)) || null;
 }
-const itNote = t => (t || "").replace(/ if necessary/i, " (se necessaria)").replace(" - Game ", " · Gara ");
-const itSeries = t => t.replace("leads series", "conduce la serie").replace("wins series", "vince la serie").replace("Series tied", "Serie in parità");
+const trNote = note => (note || "").replace(/ if necessary/i, tr("if_needed")).replace(/ - Game /i, tr("game_sep"));
+const trSeries = s => s.replace(/leads series/i, tr("leads_series")).replace(/wins series/i, tr("wins_series")).replace(/Series tied/i, tr("series_tied"));
+function trDetail(detail) {
+  const d = String(detail || "").trim();
+  if (/^halftime$/i.test(d)) return tr("halftime");
+  return d;
+}
+function gameHeadline(g) {
+  const fin = g.state === "post", live = g.state === "in";
+  if (live) return tr("live") + (g.detail ? " · " + trDetail(g.detail) : "");
+  return trNote(g.note) || (fin ? tr("final") : (g.st === 3 || g.st === 5 ? tr("playoff") : tr("regular")));
+}
 function gameCard(g) {
   const fin = g.state === "post", live = g.state === "in";
   const mid = fin || live ? `<div class="g-vs score">${g.away.score ?? "–"} – ${g.home.score ?? "–"}</div>` : `<div class="g-vs">vs</div>`;
-  const headline = live ? "In corso" + (g.detail ? " · " + g.detail : "") : (itNote(g.note) || (fin ? "Finale" : (g.st === 3 || g.st === 5 ? "Playoff" : "Regular season")));
+  const headline = gameHeadline(g);
   return `<div class="game" data-id="${g.id}">
-    <div class="g-top"><div class="g-when">${esc(fmtWhen(g.date))}</div><div class="g-note${live ? " live" : ""}">${headline}</div></div>
+    <div class="g-top"><div class="g-when">${esc(fmtWhen(g.date))}</div><div class="g-note${live ? " live" : ""}">${esc(headline)}</div></div>
     <div class="g-match">${sideBlock(g.away, fin && !g.away.winner && g.home.winner)}${mid}${sideBlock(g.home, fin && !g.home.winner && g.away.winner)}</div>
-    <div class="g-bot">${g.series ? `<div class="series">${itSeries(g.series)}</div>` : ""}<div>${[g.venue, g.tv ? "TV: " + g.tv : ""].filter(Boolean).join(" · ")}</div></div></div>`;
+    <div class="g-bot">${g.series ? `<div class="series">${esc(trSeries(g.series))}</div>` : ""}<div>${[g.venue, g.tv ? "TV: " + g.tv : ""].filter(Boolean).join(" · ")}</div></div></div>`;
 }
 function renderGames() {
   $("fresh").textContent = freshText();
   paintZoneNotes();
-  if (!SCHED) { $("g-up").innerHTML = `<div class="empty"><b>Carico il calendario…</b></div>`; $("g-rec").innerHTML = ""; $("g-src").textContent = ""; return; }
+  if (!SCHED) { $("g-up").innerHTML = `<div class="empty"><b>${esc(tr("loading_schedule"))}</b></div>`; $("g-rec").innerHTML = ""; $("g-src").textContent = ""; return; }
   const now = Date.now(), today = localKey(new Date()), start = shiftKey(today, -6);
   const byDate = (a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
   const up = SCHED.games.filter(g => g.state !== "post" && new Date(g.date).getTime() > now - 4 * 3600e3).sort(byDate);
   let rec = SCHED.games.filter(g => g.state === "post" && localKey(g.date) >= start && localKey(g.date) <= today).sort((a, b) => byDate(b, a));
   if (!rec.length) rec = SCHED.games.filter(g => g.state === "post").slice(-6).reverse();
-  const src = { live: "Calendario live ESPN", cache: "Calendario in cache", stale: "Offline: calendario salvato", offline: "Offline: calendario non disponibile" }[SCHED.source];
+  const srcKey = { live: "sched_live", cache: "sched_cache", stale: "sched_stale", offline: "sched_offline" }[SCHED.source] || "sched_offline";
   const z = zoneShort(new Date());
-  $("g-src").textContent = `${src}${SCHED.ts ? " · " + fmtClock(SCHED.ts) : ""}${z ? " · orari " + z : ""}`;
+  $("g-src").textContent = `${tr(srcKey)}${SCHED.ts ? " · " + fmtClock(SCHED.ts) : ""}${z ? " · " + tr("times_tz", { z }) : ""}`;
+  const pause = tr(L.id === "nba" ? "pause_nba" : "pause_wnba");
   $("g-up").innerHTML = up.length ? gamesHTML(up.slice(0, 24)) :
-    `<div class="empty"><b>${SCHED.source === "offline" ? "Calendario non disponibile offline" : "Nessuna partita in programma"}</b>${SCHED.source === "offline" ? "Riapri l'app quando sei online." : L.pause}</div>`;
-  $("g-rec").innerHTML = rec.length ? gamesHTML(rec) : `<div class="empty"><b>Nessun risultato recente</b></div>`;
+    `<div class="empty"><b>${esc(SCHED.source === "offline" ? tr("offline_calendar") : tr("no_upcoming"))}</b>${esc(SCHED.source === "offline" ? tr("offline_reopen") : pause)}</div>`;
+  $("g-rec").innerHTML = rec.length ? gamesHTML(rec) : `<div class="empty"><b>${esc(tr("no_recent"))}</b></div>`;
 }
 document.addEventListener("click", e => {
   const c = e.target.closest(".game");
@@ -643,7 +672,7 @@ function muRows(team, opp, side) {
 function renderMatchup() {
   const g = SCHED && SCHED.games.find(x => x.id === MU.id);
   if (!g) {
-    $("mu-head").innerHTML = `<button class="back" id="mu-back">‹ Tutte le partite</button><div class="empty"><b>${SCHED ? "Partita non disponibile" : "Carico la partita…"}</b></div>`;
+    $("mu-head").innerHTML = `<button class="back" id="mu-back">${esc(tr("back_games"))}</button><div class="empty"><b>${esc(SCHED ? tr("game_unavailable") : tr("loading_game"))}</b></div>`;
     $("mu-back").onclick = () => navigate("games", "push", () => { pinGame = MU.id || null; fromGame = null; });
     $("mu-tab0").innerHTML = ""; $("mu-tab1").innerHTML = ""; $("mu-t0").textContent = ""; $("mu-t1").textContent = "";
     if (SCHED && SCHED.games && SCHED.games.length && MU.id && !SCHED.games.some(x => x.id === MU.id)) {
@@ -656,30 +685,30 @@ function renderMatchup() {
   }
   const fin = g.state === "post", live = g.state === "in";
   const mid = fin || live ? `<div class="g-vs score">${g.away.score ?? "–"} – ${g.home.score ?? "–"}</div>` : `<div class="g-vs">vs</div>`;
-  const headline = live ? "In corso" + (g.detail ? " · " + g.detail : "") : (itNote(g.note) || (fin ? "Finale" : (g.st === 3 || g.st === 5 ? "Playoff" : "Regular season")));
-  $("mu-head").innerHTML = `<button class="back" id="mu-back">‹ Tutte le partite</button>
-    <div class="g-top"><div class="g-when">${esc(fmtWhen(g.date))}</div><div class="g-note${live ? " live" : ""}">${headline}</div></div>
+  const headline = gameHeadline(g);
+  $("mu-head").innerHTML = `<button class="back" id="mu-back">${esc(tr("back_games"))}</button>
+    <div class="g-top"><div class="g-when">${esc(fmtWhen(g.date))}</div><div class="g-note${live ? " live" : ""}">${esc(headline)}</div></div>
     <div class="g-match mu-match">${sideBlock(g.away, fin && !g.away.winner && g.home.winner)}${mid}${sideBlock(g.home, fin && !g.home.winner && g.away.winner)}</div>
-    <div class="g-bot">${g.series ? `<div class="series">${itSeries(g.series)}</div>` : ""}<div>${[g.venue, g.tv ? "TV: " + g.tv : ""].filter(Boolean).join(" · ")}</div></div>`;
+    <div class="g-bot">${g.series ? `<div class="series">${esc(trSeries(g.series))}</div>` : ""}<div>${[g.venue, g.tv ? "TV: " + g.tv : ""].filter(Boolean).join(" · ")}</div></div>`;
   $("mu-back").onclick = () => navigate("games", "push", () => { pinGame = MU.id; fromGame = null; });
   const setMu = (el, opts, key) => { el.innerHTML = ""; opts.forEach(([v, l]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = l; b.className = String(MU[key]) === String(v) ? "on" : "";
     b.onclick = () => { MU[key] = v; renderMatchup(); }; el.appendChild(b); }); mountStrip(el); };
   setBadge("uf-badge", (MU.venue !== "side") + (Number(MU.minMin) !== 10));
-  setMu($("mu-stats"), MKTS.map(s => [s[0], s[1]]), "stat");
-  setMu($("mu-venue"), [["side", "Come in questa partita"], ["all", "Tutte"]], "venue");
+  setMu($("mu-stats"), MKTS.map(s => [s[0], tr(s[1])]), "stat");
+  setMu($("mu-venue"), [["side", tr("as_this_game")], ["all", tr("team_all")]], "venue");
   setMu($("mu-min"), [[0, "0"], [10, "10"], [20, "20"]], "minMin");
   const sides = [[g.away, g.home, "away"], [g.home, g.away, "home"]];
-  $("mu-links").innerHTML = `<span class="lbl">Apri in Listone</span>` + sides.map(([t, o], i) => `<button class="linkbtn" data-i="${i}">${t.abbr} vs ${o.abbr}</button>`).join("");
+  $("mu-links").innerHTML = `<span class="lbl">${esc(tr("open_board"))}</span>` + sides.map(([t, o], i) => `<button class="linkbtn" data-i="${i}">${t.abbr} vs ${o.abbr}</button>`).join("");
   $("mu-links").querySelectorAll("button").forEach(b => b.onclick = () => { const [t, o, side] = sides[+b.dataset.i];
     const preset = { stat: MU.stat, team: t.abbr, opp: o.abbr, venue: MU.venue === "side" ? side : "all", phase: "all", period: "all", minMin: MU.minMin, minG: 1, lines: {}, fixed: null, sort: "h10", dir: -1 };
     navigate("markets", "push", () => { Object.assign(M, preset); fromGame = null; pinGame = null; }); });
   const hcell = h => h.pct === null ? `<td class="hr na">–</td>` : `<td class="hr ${pctCls(h.pct)}"><b>${h.pct}%</b><small>${h.o}/${h.n}</small></td>`;
   sides.forEach(([t, o, side], i) => {
     const rows = muRows(t.abbr, o.abbr, side);
-    $("mu-t" + i).textContent = `${t.name} · ${MKTS.find(x => x[0] === MU.stat)[1]}${MU.venue === "side" ? ` · solo ${side === "home" ? "casa" : "trasferta"}` : ""}`;
-    $("mu-tab" + i).innerHTML = `<thead><tr><th>${L.one}</th><th>MIN</th><th>Ultime 10</th><th>Media</th><th>Linea</th><th>L10</th><th>Stagione</th><th>vs ${o.abbr}</th></tr></thead><tbody>` +
+    $("mu-t" + i).textContent = `${t.name} · ${mName()}${MU.venue === "side" ? " · " + tr(side === "home" ? "only_home" : "only_away") : ""}`;
+    $("mu-tab" + i).innerHTML = `<thead><tr><th>${esc(trf("tab_player"))}</th><th>MIN</th><th>${esc(tr("col_last10"))}</th><th>${esc(tr("col_avg"))}</th><th>${esc(tr("col_line"))}</th><th>L10</th><th>${esc(tr("col_season"))}</th><th>vs ${esc(o.abbr)}</th></tr></thead><tbody>` +
       (rows.length ? rows.map(r => `<tr data-id="${r.p.id}" data-line="${r.line}" data-opp="${o.abbr}" data-side="${side}"><td class="pl"><b>${esc(r.p.name)}</b>${injHTML(r.p)}<small>${esc(r.p.pos || "")}</small></td><td>${r.mins.toFixed(1)}</td><td>${spark(r.last10, r.line)}</td><td>${r.avg.toFixed(1)}</td><td><b>${r.line}</b></td>${hcell(r.h10)}${hcell(r.hs)}${hcell(r.hv)}</tr>`).join("")
-        : `<tr><td colspan="8" class="na">${L.none}</td></tr>`) + "</tbody>";
+        : `<tr><td colspan="8" class="na">${esc(trf("none"))}</td></tr>`) + "</tbody>";
   });
   $("fresh").textContent = freshText();
 }
@@ -906,17 +935,22 @@ window.addEventListener("scroll", () => {
 }, { passive: true });
 window.addEventListener("popstate", () => { if (history.state && history.state.view) applyState(history.state); });
 
-function foot() { $("foot-note").textContent = `Fonte: ${D.source} · file incluso generato ${D.generated.replace("T"," ")} · ${D.players.length} ${L.noun}. Progetto personale, nessuna affiliazione con WNBA, NBA o ESPN.`; }
+function foot() {
+  const iso = String(D.generated || "");
+  const date = I18n.fmtDate(iso.slice(0, 10), true);
+  const tm = iso.match(/T(\d{2}:\d{2})/);
+  $("foot-note").textContent = tr("foot", { source: D.source, generated: tm ? `${date} ${tm[1]}` : date, n: D.players.length, noun: trf("noun") });
+}
 function setStatus(text, tone) {
   const el = $("status"); el.textContent = text; el.className = "status" + (tone ? " " + tone : "");
   const dot = $("status-dot"); if (dot) { dot.className = "dot " + (tone || "pending"); dot.title = text; }
 }
 function applyChrome() {
   const lab = $("league-label"); if (lab) lab.textContent = L.label;
-  const tab = document.querySelector('#tabs button[data-v="player"] .tab-l'); if (tab) tab.textContent = L.one;
-  if (q) q.placeholder = L.ph;
+  const tab = document.querySelector('#tabs button[data-v="player"] .tab-l'); if (tab) tab.textContent = trf("tab_player");
+  if (q) q.placeholder = trf("search_ph");
   document.querySelectorAll(".league-opt").forEach(b => b.classList.toggle("on", b.dataset.league === L.id));
-  COLS[0][1] = L.one;
+  document.querySelectorAll("[data-i18n-fem]").forEach(el => { el.textContent = trf(el.getAttribute("data-i18n-fem")); });
 }
 function openLeague(data, league) {
   L = league; D = data; reindex(D.fields);
@@ -927,7 +961,7 @@ function openLeague(data, league) {
   fromGame = null; pinGame = null; pinShown = null;
   applyChrome(); foot();
   bootHistory();
-  setStatus("Controllo nuove partite…", "pending");
+  setStatus(tr("checking"), "pending");
   guideMaybe();
 }
 const GUIDE_KEY = "prop-lab-guide";
@@ -949,7 +983,7 @@ function guideAt(i, animate) {
   const w = view.clientWidth || 1;
   track.style.transition = animate === false ? "none" : "transform .38s cubic-bezier(.22,.85,.28,1)";
   track.style.transform = `translate3d(${-gi * w}px,0,0)`;
-  if (next) next.textContent = gi === slides.length - 1 ? "Inizia" : "Avanti";
+  if (next) next.textContent = gi === slides.length - 1 ? tr("guide_start") : tr("guide_next");
   dots.forEach((d, k) => {
     d.classList.toggle("on", k === gi);
     d.setAttribute("aria-selected", k === gi ? "true" : "false");
@@ -1038,6 +1072,13 @@ function initGuide() {
   window.addEventListener("resize", () => { if (!root.hidden) guideAt(gi, false); });
 }
 initGuide();
+I18n.on(() => {
+  applyChrome();
+  if (D && D.players) foot();
+  const guide = $("guide");
+  if (guide && !guide.hidden) guideAt(gi, false);
+  if (D && D.players && D.players.length) paint({ scroll: "keep" });
+});
 return {
   data: () => D,
   league: () => L,
